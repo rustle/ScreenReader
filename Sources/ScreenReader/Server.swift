@@ -20,4 +20,10 @@ public actor Server {
         self.bundleIdentifier = bundleIdentifier
         self.element = try SystemElement.application(processIdentifier: processIdentifier)
     }
+    public func start() async {
+        
+    }
+    public func stop() async {
+        
+    }
 }

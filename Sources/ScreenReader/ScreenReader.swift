@@ -40,15 +40,21 @@ public final class ScreenReader {
         runningApplicationsTask?.cancel()
         runningApplicationsTask = nil
     }
+    struct ServerKey: Hashable {
+        let processIdentifier: pid_t
+        let bundleIdentifier: BundleIdentifier
+    }
+    private var running: [ServerKey:Server] = [:]
 }
 
 private extension Array where Element == NSRunningApplication {
-    func identifiers() -> [(pid_t, BundleIdentifier)] {
-        compactMap { application -> (pid_t, BundleIdentifier)? in
+    func identifiers() -> [ScreenReader.ServerKey] {
+        compactMap { application in
             guard let bundleIdentifier = BundleIdentifier(rawValue: application.bundleIdentifier) else {
                 return nil
             }
-            return (application.processIdentifier, bundleIdentifier)
+            return .init(processIdentifier: application.processIdentifier,
+                         bundleIdentifier: bundleIdentifier)
         }
     }
 }
@@ -69,21 +75,27 @@ extension ScreenReader {
         }
     }
     private func add(applications: [NSRunningApplication]) async {
-        for (processIdentifier, bundleIdentifier) in applications.identifiers() {
-            Self.logger.debug("Add \(processIdentifier) \(bundleIdentifier)")
+        for key in applications.identifiers() {
             do {
-                _ = try await serverProvider.connect(processIdentifier: processIdentifier,
-                                                     bundleIdentifier: bundleIdentifier)
+                let server = try await serverProvider.connect(processIdentifier: key.processIdentifier,
+                                                              bundleIdentifier: key.bundleIdentifier)
+                Self.logger.debug("Add \(key.processIdentifier) \(key.bundleIdentifier)")
+                await server.start()
+                running[key] = server
             } catch ServerProviderError.ignored {
-                Self.logger.error("Ignored \(processIdentifier) \(bundleIdentifier)")
+                Self.logger.error("Ignored \(key.processIdentifier) \(key.bundleIdentifier)")
             } catch {
                 Self.logger.error("\(error.localizedDescription)")
             }
         }
     }
     private func remove(applications: [NSRunningApplication]) async {
-        for (processIdentifier, bundleIdentifier) in applications.identifiers() {
-            Self.logger.debug("Remove \(processIdentifier) \(bundleIdentifier)")
+        for key in applications.identifiers() {
+            if let server = running.removeValue(forKey: .init(processIdentifier: key.processIdentifier,
+                                                              bundleIdentifier: key.bundleIdentifier)) {
+                Self.logger.debug("Remove \(key.processIdentifier) \(key.bundleIdentifier)")
+                await server.stop()
+            }
         }
     }
 }
