@@ -14,12 +14,16 @@ public enum ServerProviderError: Error {
 public actor ServerProvider {
     static let logger = Logger(subsystem: "ScreenReader",
                                category: "ServerProvider")
-    private let ignoreList = Set<BundleIdentifier>([])
+    // TODO: Source this from a plist or a DB
+    private let ignoreList = Set<BundleIdentifier>([
+        "com.apple.webkit.databases",
+        "com.apple.webkit.networking",
+    ])
     public func connect(processIdentifier: pid_t,
                         bundleIdentifier: BundleIdentifier,
                         updateFocusOnConnect: Bool = false) async throws -> Server {
         Self.logger.info("Connect \(bundleIdentifier) -- \(processIdentifier) -- updateFocusOnConnect \(updateFocusOnConnect)")
-        guard !ignoreList.contains(bundleIdentifier) else {
+        guard !ignoreList.contains(bundleIdentifier) && processIdentifier != getpid() else {
             throw ServerProviderError.ignored
         }
         return try await .init(processIdentifier: processIdentifier,
