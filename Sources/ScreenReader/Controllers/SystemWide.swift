@@ -1,0 +1,20 @@
+//
+//  SystemWide.swift
+//
+//  Copyright © 2017-2022 Doug Russell. All rights reserved.
+//
+
+import AccessibilityElement
+import Cocoa
+import os
+
+public actor SystemWide: Controller {
+    static let logger = Logger(subsystem: "ScreenReader",
+                               category: "SystemWide")
+    private let element: SystemElement
+    public init() async throws {
+        self.element = try SystemElement.systemWide()
+    }
+    public func start() async throws {}
+    public func stop() async throws {}
+}

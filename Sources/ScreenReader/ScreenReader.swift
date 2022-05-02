@@ -80,7 +80,7 @@ extension ScreenReader {
                 let server = try await serverProvider.connect(processIdentifier: key.processIdentifier,
                                                               bundleIdentifier: key.bundleIdentifier)
                 Self.logger.debug("Add \(key.processIdentifier) \(key.bundleIdentifier)")
-                await server.start()
+                try await server.start()
                 running[key] = server
             } catch ServerProviderError.ignored {
                 Self.logger.error("Ignored \(key.processIdentifier) \(key.bundleIdentifier)")
@@ -94,7 +94,11 @@ extension ScreenReader {
             if let server = running.removeValue(forKey: .init(processIdentifier: key.processIdentifier,
                                                               bundleIdentifier: key.bundleIdentifier)) {
                 Self.logger.debug("Remove \(key.processIdentifier) \(key.bundleIdentifier)")
-                await server.stop()
+                do {
+                    try await server.stop()
+                } catch {
+                    Self.logger.error("Server Stop Error: \(error.localizedDescription)")
+                }
             }
         }
     }
