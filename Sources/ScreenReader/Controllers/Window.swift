@@ -12,13 +12,24 @@ public actor Window: Controller {
     static let logger = Logger(subsystem: "ScreenReader",
                                category: "Window")
     private let element: SystemElement
-    public init(element: SystemElement) async throws {
+    private let observer: ApplicationObserver
+    private var observerTokens: [ApplicationObserver.ObserverToken] = []
+    public init(
+        element: SystemElement,
+        observer: ApplicationObserver
+    ) async throws {
         self.element = element
+        self.observer = observer
     }
     public func start() async throws {
-        
+        Self.logger.info("\(#function) \(self.element)")
     }
     public func stop() async throws {
-        
+        do {
+            for observerToken in observerTokens {
+                try await observer.remove(token: observerToken)
+            }
+        } catch {}
+        observerTokens.removeAll()
     }
 }

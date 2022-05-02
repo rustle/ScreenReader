@@ -1,5 +1,5 @@
 //
-//  Unknown.swift
+//  Button.swift
 //
 //  Copyright © 2017-2022 Doug Russell. All rights reserved.
 //
@@ -8,9 +8,9 @@ import AccessibilityElement
 import Foundation
 import os
 
-public actor Unknown: Controller {
+public actor Button: Controller {
     static let logger = Logger(subsystem: "ScreenReader",
-                               category: "Unknown")
+                               category: "Button")
     private let element: SystemElement
     private let observer: ApplicationObserver
     private var observerTokens: [ApplicationObserver.ObserverToken] = []
@@ -36,3 +36,4 @@ public actor Unknown: Controller {
         observerTokens.removeAll()
     }
 }
+

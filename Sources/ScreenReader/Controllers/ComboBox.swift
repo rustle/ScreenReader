@@ -1,5 +1,5 @@
 //
-//  Unknown.swift
+//  ComboBox.swift
 //
 //  Copyright © 2017-2022 Doug Russell. All rights reserved.
 //
@@ -8,16 +8,14 @@ import AccessibilityElement
 import Foundation
 import os
 
-public actor Unknown: Controller {
+public actor ComboBox: Controller {
     static let logger = Logger(subsystem: "ScreenReader",
-                               category: "Unknown")
+                               category: "ComboBox")
     private let element: SystemElement
     private let observer: ApplicationObserver
     private var observerTokens: [ApplicationObserver.ObserverToken] = []
-    public init(
-        element: SystemElement,
-        observer: ApplicationObserver
-    ) async throws {
+    public init(element: SystemElement,
+                observer: ApplicationObserver) async throws {
         self.element = element
         self.observer = observer
     }
@@ -36,3 +34,4 @@ public actor Unknown: Controller {
         observerTokens.removeAll()
     }
 }
+
