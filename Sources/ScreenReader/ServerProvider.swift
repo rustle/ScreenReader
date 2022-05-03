@@ -23,6 +23,7 @@ public actor ServerProvider {
     public func connect(
         processIdentifier: pid_t,
         bundleIdentifier: BundleIdentifier,
+        output: Output,
         updateFocusOnConnect: Bool = false
     ) async throws -> Server {
         logger.info("Connect \(bundleIdentifier) -- \(processIdentifier) -- updateFocusOnConnect \(updateFocusOnConnect)")
@@ -37,7 +38,8 @@ public actor ServerProvider {
         }
         return try await .init(
             processIdentifier: processIdentifier,
-            bundleIdentifier: bundleIdentifier
+            bundleIdentifier: bundleIdentifier,
+            output: output
         )
     }
 }

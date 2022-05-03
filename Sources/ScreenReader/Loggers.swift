@@ -47,4 +47,22 @@ struct Loggers {
         subsystem: "ScreenReader",
         category: "Hierarchy"
     )
+    struct Output {
+        static let output = Logger(
+            subsystem: "ScreenReader",
+            category: "Output"
+        )
+        static let braille = Logger(
+            subsystem: "ScreenReader",
+            category: "Braille"
+        )
+        static let speech = Logger(
+            subsystem: "ScreenReader",
+            category: "Speech"
+        )
+        static let text = Logger(
+            subsystem: "ScreenReader",
+            category: "Text"
+        )
+    }
 }

@@ -17,17 +17,19 @@ public actor Application<ObserverType: Observer>: Controller where ObserverType.
     private var observer: ApplicationObserver<ObserverType>?
     private var observerTokens: [ApplicationObserver<ObserverType>.ObserverToken] = []
     private var focusedUIElement: Controller?
-
+    private let output: Output
     private var observerFactory: () async throws -> ApplicationObserver<ObserverType>
     private var controllerFactory: (ElementType, ApplicationObserver<ObserverType>) async throws -> Controller
     private var hierarchy: ControllerHierarchy<ObserverType>?
 
     public init(
         element: ElementType,
+        output: Output,
         observerFactory: @escaping () async throws -> ApplicationObserver<ObserverType>,
         controllerFactory: @escaping (ElementType, ApplicationObserver<ObserverType>) async throws -> Controller
     ) async throws {
         self.element = element
+        self.output = output
         self.observerFactory = observerFactory
         self.controllerFactory = controllerFactory
     }
@@ -204,9 +206,13 @@ extension Application {
 }
 
 extension Application where ObserverType == SystemObserver {
-    public convenience init(processIdentifier: pid_t) async throws {
+    public convenience init(
+        processIdentifier: pid_t,
+        output: Output
+    ) async throws {
         try await self.init(
             element: try .application(processIdentifier: processIdentifier),
+            output: output,
             observerFactory: { .init(observer: try .init(processIdentifier: processIdentifier)) },
             controllerFactory: Application.controller(element:observer:)
         )

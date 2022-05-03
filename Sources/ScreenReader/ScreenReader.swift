@@ -9,6 +9,7 @@ import Cocoa
 public actor ScreenReader {
     private let serverProvider: ServerProvider
     private var runningApplicationsTask: Task<Void, Error>?
+    private let output = Output()
     private let dependencies: ScreenReaderDependencies
     public init(dependencies: Dependencies) {
         self.dependencies = dependencies.screenReaderDependenciesFactory()
@@ -77,8 +78,11 @@ extension ScreenReader {
     private func add(applications: [NSRunningApplication]) async {
         for key in applications.identifiers() {
             do {
-                let server = try await serverProvider.connect(processIdentifier: key.processIdentifier,
-                                                              bundleIdentifier: key.bundleIdentifier)
+                let server = try await serverProvider.connect(
+                    processIdentifier: key.processIdentifier,
+                    bundleIdentifier: key.bundleIdentifier,
+                    output: output
+                )
                 dependencies.logger.debug("Add \(key.processIdentifier) \(key.bundleIdentifier)")
                 try await server.start()
                 running[key] = server

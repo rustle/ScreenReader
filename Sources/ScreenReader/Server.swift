@@ -47,12 +47,16 @@ public actor Server {
 extension Server {
     public convenience init(
         processIdentifier: pid_t,
-        bundleIdentifier: BundleIdentifier
+        bundleIdentifier: BundleIdentifier,
+        output: Output
     ) async throws {
         try await self.init(
             processIdentifier: processIdentifier,
             bundleIdentifier: bundleIdentifier,
-            application: try await Application(processIdentifier: processIdentifier)
+            application: try await Application(
+                processIdentifier: processIdentifier,
+                output: output
+            )
         )
     }
 }
