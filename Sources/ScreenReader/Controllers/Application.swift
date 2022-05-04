@@ -15,7 +15,7 @@ public actor Application: Controller {
     private let element: SystemElement
     private var observer: ApplicationObserver<SystemObserver>!
     private var observerTokens: [ApplicationObserver<SystemObserver>.ObserverToken] = []
-    private var windows: [SystemElement:Window] = [:]
+    private var windows: [SystemElement:Window<SystemObserver>] = [:]
     private var focusedUIElement: Controller?
     public convenience init(processIdentifier: pid_t) async throws {
         try await self.init(element: try SystemElement.application(processIdentifier: processIdentifier))

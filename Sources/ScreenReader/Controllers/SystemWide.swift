@@ -9,8 +9,6 @@ import Cocoa
 import os
 
 public actor SystemWide: Controller {
-    static let logger = Logger(subsystem: "ScreenReader",
-                               category: "SystemWide")
     private let element: SystemElement
     public init() async throws {
         self.element = try SystemElement.systemWide()

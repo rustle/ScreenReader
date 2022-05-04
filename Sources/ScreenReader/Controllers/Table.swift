@@ -8,29 +8,28 @@ import AccessibilityElement
 import Foundation
 import os
 
-public actor Table: Controller {
-    static let logger = Logger(subsystem: "ScreenReader",
-                               category: "Table")
-    private let element: SystemElement
-    private let observer: ApplicationObserver<SystemObserver>
-    private var observerTokens: [ApplicationObserver<SystemObserver>.ObserverToken] = []
+public actor Table<ObserverType: Observer>: Controller where ObserverType.ObserverElement: Hashable {
+    public typealias ElementType = ObserverType.ObserverElement
+    private let element: ElementType
+    private let observer: ApplicationObserver<ObserverType>
+    private var observerTokens: [ApplicationObserver<ObserverType>.ObserverToken] = []
     public init(
-        element: SystemElement,
-        observer: ApplicationObserver<SystemObserver>
+        element: ElementType,
+        observer: ApplicationObserver<ObserverType>
     ) async throws {
         self.element = element
         self.observer = observer
     }
     public func start() async throws {
-        Self.logger.info("\(#function) \(self.element)")
+        Loggers.table.info("\(#function) \(self.element)")
         observerTokens.append(try await observer.add(
             element: element,
             notification: .selectedRowsChanged,
-            handler: isolated(action: Table.selectedRowsChanged)
+            handler: isolated(action: Table<ObserverType>.selectedRowsChanged)
         ))
     }
     public func focus() async throws {
-        Self.logger.info("\(#function) \(self.element)")
+        Loggers.table.info("\(#function) \(self.element)")
     }
     public func stop() async throws {
         do {
@@ -41,9 +40,9 @@ public actor Table: Controller {
         observerTokens.removeAll()
     }
     private func selectedRowsChanged(
-        element: SystemElement,
+        element: ElementType,
         userInfo: [String:Any]
     ) async {
-        Self.logger.info("\(#function) \(element)")
+        Loggers.table.info("\(#function) \(element)")
     }
 }
