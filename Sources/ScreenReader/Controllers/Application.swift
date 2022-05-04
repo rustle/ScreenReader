@@ -13,8 +13,8 @@ public actor Application: Controller {
     static let logger = Logger(subsystem: "ScreenReader",
                                category: "Application")
     private let element: SystemElement
-    private var observer: ApplicationObserver!
-    private var observerTokens: [ApplicationObserver.ObserverToken] = []
+    private var observer: ApplicationObserver<SystemObserver>!
+    private var observerTokens: [ApplicationObserver<SystemObserver>.ObserverToken] = []
     private var windows: [SystemElement:Window] = [:]
     private var focusedUIElement: Controller?
     public convenience init(processIdentifier: pid_t) async throws {
@@ -108,7 +108,7 @@ public actor Application: Controller {
 extension Application {
     public static func controller(
         element: SystemElement,
-        observer: ApplicationObserver
+        observer: ApplicationObserver<SystemObserver>
     ) async throws -> Controller {
         let role = try element.role()
         switch role {

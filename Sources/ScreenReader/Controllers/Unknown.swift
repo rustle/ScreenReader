@@ -12,11 +12,11 @@ public actor Unknown: Controller {
     static let logger = Logger(subsystem: "ScreenReader",
                                category: "Unknown")
     private let element: SystemElement
-    private let observer: ApplicationObserver
-    private var observerTokens: [ApplicationObserver.ObserverToken] = []
+    private let observer: ApplicationObserver<SystemObserver>
+    private var observerTokens: [ApplicationObserver<SystemObserver>.ObserverToken] = []
     public init(
         element: SystemElement,
-        observer: ApplicationObserver
+        observer: ApplicationObserver<SystemObserver>
     ) async throws {
         self.element = element
         self.observer = observer

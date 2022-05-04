@@ -7,12 +7,12 @@
 import AccessibilityElement
 import Cocoa
 
-public actor ApplicationObserver: Observer {
-    public typealias ObserverElement = SystemElement
+public actor ApplicationObserver<ObserverType: Observer>: Observer where ObserverType.ObserverElement: Hashable {
+    public typealias ObserverElement = ObserverType.ObserverElement
     public typealias ObserverToken = ApplicationObserverToken
 
-    private let observer: SystemObserver
-    public init(observer: SystemObserver) {
+    private let observer: ObserverType
+    public init(observer: ObserverType) {
         self.observer = observer
     }
 
@@ -20,8 +20,8 @@ public actor ApplicationObserver: Observer {
         try await observer.start()
     }
 
-    private var observerTokens: [ApplicationObserverKey:SystemObserver.ObserverToken] = [:]
-    private var tokensForToken: [SystemObserver.ObserverToken:[UUID:ObserverToken]] = [:]
+    private var observerTokens: [ApplicationObserverKey:ObserverType.ObserverToken] = [:]
+    private var tokensForToken: [ObserverType.ObserverToken:[UUID:ObserverToken]] = [:]
 
     public func add(element: ObserverElement,
                     notification: NSAccessibility.Notification,
@@ -35,7 +35,7 @@ public actor ApplicationObserver: Observer {
             key: key,
             handler: handler
         )
-        let observerToken: SystemObserver.ObserverToken
+        let observerToken: ObserverType.ObserverToken
         if let t = observerTokens[key]  {
             observerToken = t
         } else {
@@ -76,7 +76,7 @@ public actor ApplicationObserver: Observer {
 
     private func handle(
         key: ApplicationObserverKey,
-        element: SystemElement,
+        element: ObserverElement,
         userInfo: [String:Any]
     ) async {
         guard let token = observerTokens[key] else { return }
@@ -89,7 +89,7 @@ public actor ApplicationObserver: Observer {
 
 extension ApplicationObserver {
     fileprivate struct ApplicationObserverKey: Hashable {
-        let element: SystemElement
+        let element: ObserverElement
         let notification: NSAccessibility.Notification
     }
 }
