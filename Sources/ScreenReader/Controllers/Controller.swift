@@ -6,7 +6,7 @@
 
 import AccessibilityElement
 
-public protocol Controller {
+public protocol Controller: Actor {
     func start() async throws
     func stop() async throws
     func focus() async throws
