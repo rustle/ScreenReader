@@ -6,11 +6,8 @@
 
 import AccessibilityElement
 import Foundation
-import os
 
 public actor Server {
-    static let logger = Logger(subsystem: "ScreenReader",
-                               category: "Server")
     public let processIdentifier: pid_t
     public let bundleIdentifier: BundleIdentifier
     private let application: Application

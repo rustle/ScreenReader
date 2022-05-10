@@ -31,4 +31,8 @@ struct Loggers {
         subsystem: "ScreenReader",
         category: "Window"
     )
+    static let server = Logger(
+        subsystem: "ScreenReader",
+        category: "Server"
+    )
 }
