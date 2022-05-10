@@ -12,30 +12,32 @@ public enum ServerProviderError: Error {
 }
 
 public actor ServerProvider {
-    static let logger = Logger(subsystem: "ScreenReader",
-                               category: "ServerProvider")
-    // TODO: Source this from a plist or a DB
-    private let excludeList = Set<BundleIdentifier>([
-        "com.apple.webkit.databases",
-        "com.apple.webkit.networking",
-    ])
-    private let inclusionList = Set<BundleIdentifier>([
-        //"com.apple.finder",
-    ])
-    public func connect(processIdentifier: pid_t,
-                        bundleIdentifier: BundleIdentifier,
-                        updateFocusOnConnect: Bool = false) async throws -> Server {
-        Self.logger.info("Connect \(bundleIdentifier) -- \(processIdentifier) -- updateFocusOnConnect \(updateFocusOnConnect)")
+    private let exclusionList: Set<BundleIdentifier>
+    private let inclusionList: Set<BundleIdentifier>
+    private let logger: Logger
+    public init(dependencies: ServerProviderDependencies) {
+        logger = dependencies.logger
+        exclusionList = dependencies.exclusionListFactory()
+        inclusionList = dependencies.inclusionListFactory()
+    }
+    public func connect(
+        processIdentifier: pid_t,
+        bundleIdentifier: BundleIdentifier,
+        updateFocusOnConnect: Bool = false
+    ) async throws -> Server {
+        logger.info("Connect \(bundleIdentifier) -- \(processIdentifier) -- updateFocusOnConnect \(updateFocusOnConnect)")
         guard processIdentifier != getpid() else {
             throw ServerProviderError.ignored
         }
-        if !excludeList.isEmpty, excludeList.contains(bundleIdentifier) {
+        if !exclusionList.isEmpty, exclusionList.contains(bundleIdentifier) {
             throw ServerProviderError.ignored
         }
         if !inclusionList.isEmpty, !inclusionList.contains(bundleIdentifier) {
             throw ServerProviderError.ignored
         }
-        return try await .init(processIdentifier: processIdentifier,
-                               bundleIdentifier: bundleIdentifier)
+        return try await .init(
+            processIdentifier: processIdentifier,
+            bundleIdentifier: bundleIdentifier
+        )
     }
 }

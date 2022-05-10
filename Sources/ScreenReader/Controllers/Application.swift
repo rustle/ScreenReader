@@ -4,37 +4,50 @@
 //  Copyright © 2017-2022 Doug Russell. All rights reserved.
 //
 
-import AX
 import AccessibilityElement
 import Cocoa
 import os
 
-public actor Application: Controller {
-    static let logger = Logger(subsystem: "ScreenReader",
-                               category: "Application")
-    private let element: SystemElement
-    private var observer: ApplicationObserver<SystemObserver>!
-    private var observerTokens: [ApplicationObserver<SystemObserver>.ObserverToken] = []
-    private var windows: [SystemElement:Window<SystemObserver>] = [:]
+public actor Application<ObserverType: Observer>: Controller where ObserverType.ObserverElement: Hashable {
+    public typealias ElementType = ObserverType.ObserverElement
+    public let element: ElementType
+    private var observer: ApplicationObserver<ObserverType>?
+    private var observerTokens: [ApplicationObserver<ObserverType>.ObserverToken] = []
+    private var windows: [ElementType:Window<ObserverType>] = [:]
     private var focusedUIElement: Controller?
-    public convenience init(processIdentifier: pid_t) async throws {
-        try await self.init(element: try SystemElement.application(processIdentifier: processIdentifier))
-    }
-    public init(element: SystemElement) async throws {
+
+    private var observerFactory: () async throws -> ApplicationObserver<ObserverType>
+    private var controllerFactory: (ElementType, ApplicationObserver<ObserverType>) async throws -> Controller
+
+    public init(
+        element: ElementType,
+        observerFactory: @escaping () async throws -> ApplicationObserver<ObserverType>,
+        controllerFactory: @escaping (ElementType, ApplicationObserver<ObserverType>) async throws -> Controller
+    ) async throws {
         self.element = element
+        self.observerFactory = observerFactory
+        self.controllerFactory = controllerFactory
     }
     public func start() async throws {
-        observer = .init(observer: try await SystemObserver(pid: try element.processIdentifier))
+        precondition(observer != nil)
+        let observer = try await observerFactory()
+        self.observer = observer
         try await observer.start()
-        observerTokens.append(try await observer.add(element: element,
-                                                     notification: .windowCreated,
-                                                     handler: isolated(action: Application.windowCreated)))
-        observerTokens.append(try await observer.add(element: element,
-                                                     notification: .focusedWindowChanged,
-                                                     handler: isolated(action: Application.focusedWindowChanged)))
-        observerTokens.append(try await observer.add(element: element,
-                                                     notification: .focusedUIElementChanged,
-                                                     handler: isolated(action: Application.focusedUIElementChanged)))
+        observerTokens.append(try await observer.add(
+            element: element,
+            notification: .windowCreated,
+            handler: isolated(action: Application.windowCreated))
+        )
+        observerTokens.append(try await observer.add(
+            element: element,
+            notification: .focusedWindowChanged,
+            handler: isolated(action: Application.focusedWindowChanged))
+        )
+        observerTokens.append(try await observer.add(
+            element: element,
+            notification: .focusedUIElementChanged,
+            handler: isolated(action: Application.focusedUIElementChanged))
+        )
         for window in try element.windows() {
             try await add(window: window)
         }
@@ -43,35 +56,36 @@ public actor Application: Controller {
         observer = nil
     }
     private func windowCreated(
-        window: SystemElement,
+        window: ElementType,
         userInfo: [String:Any]?
     ) async {
-        Self.logger.info("\(#function) \(window)")
+        Loggers.application.info("\(#function) \(window)")
         do {
             try await self.add(window: window)
         } catch {}
     }
     private func windowDestroyed(
-        window: SystemElement,
+        window: ElementType,
         userInfo: [String:Any]?
     ) async {
-        Self.logger.info("\(#function) \(window)")
+        Loggers.application.info("\(#function) \(window)")
     }
     private func focusedWindowChanged(
-        window: SystemElement,
+        window: ElementType,
         userInfo: [String:Any]?
     ) async {
-        Self.logger.info("\(#function) \(window)")
+        Loggers.application.info("\(#function) \(window)")
     }
     private func focusedUIElementChanged(
-        element: SystemElement,
+        element: ElementType,
         userInfo: [String:Any]?
     ) async {
-        Self.logger.info("\(#function) \(element.debugDescription)")
+        guard let observer = observer else { return }
+        Loggers.application.info("\(#function) \(element.debugDescription)")
         do {
             try await focusedUIElement?.stop()
         } catch {
-            Self.logger.error("\(error.localizedDescription)")
+            Loggers.application.error("\(error.localizedDescription)")
         }
         do {
             focusedUIElement = try await Self.controller(
@@ -79,22 +93,25 @@ public actor Application: Controller {
                 observer: observer
             )
         } catch {
-            Self.logger.error("\(error.localizedDescription)")
+            Loggers.application.error("\(error.localizedDescription)")
         }
         do {
             try await focusedUIElement?.start()
             try await focusedUIElement?.focus()
         } catch {
-            Self.logger.error("\(error.localizedDescription)")
+            Loggers.application.error("\(error.localizedDescription)")
         }
     }
-    private func add(window: SystemElement) async throws {
+    private func add(window: ElementType) async throws {
+        guard let observer = observer else { return }
         do {
-            observerTokens.append(try await observer.add(element: element,
-                                                         notification: .uiElementDestroyed,
-                                                         handler: isolated(action: Application.windowDestroyed)))
+            observerTokens.append(try await observer.add(
+                element: element,
+                notification: .uiElementDestroyed,
+                handler: isolated(action: Application.windowDestroyed))
+            )
         } catch {
-            Self.logger.error("\(error.localizedDescription)")
+            Loggers.application.error("\(error.localizedDescription)")
         }
         let windowController = try await Window(
             element: window,
@@ -107,8 +124,8 @@ public actor Application: Controller {
 
 extension Application {
     public static func controller(
-        element: SystemElement,
-        observer: ApplicationObserver<SystemObserver>
+        element: ElementType,
+        observer: ApplicationObserver<ObserverType>
     ) async throws -> Controller {
         let role = try element.role()
         switch role {
@@ -143,5 +160,15 @@ extension Application {
                 observer: observer
             )
         }
+    }
+}
+
+extension Application where ObserverType == SystemObserver {
+    public convenience init(processIdentifier: pid_t) async throws {
+        try await self.init(
+            element: try .application(processIdentifier: processIdentifier),
+            observerFactory: { .init(observer: try await .init(pid: processIdentifier)) },
+            controllerFactory: Application.controller(element:observer:)
+        )
     }
 }

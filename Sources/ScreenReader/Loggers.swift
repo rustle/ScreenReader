@@ -7,6 +7,10 @@
 import os
 
 struct Loggers {
+    static let application = Logger(
+        subsystem: "ScreenReader",
+        category: "Application"
+    )
     static let button = Logger(
         subsystem: "ScreenReader",
         category: "Button"

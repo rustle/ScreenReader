@@ -4,31 +4,31 @@
 //  Copyright © 2017-2022 Doug Russell. All rights reserved.
 //
 
-import AX
 import Cocoa
-import os
 
 public final class ScreenReader {
-    static let logger = Logger(subsystem: "ScreenReader",
-                               category: "ScreenReader")
-    private let serverProvider: ServerProvider = .init()
-    private var runningApplicationsTask: Task<Void, Swift.Error>?
-    public init() {}
+    private let serverProvider: ServerProvider
+    private var runningApplicationsTask: Task<Void, Error>?
+    private let dependencies: ScreenReaderDependencies
+    public init(dependencies: Dependencies) {
+        self.dependencies = dependencies.screenReaderDependenciesFactory()
+        serverProvider = ServerProvider(dependencies: dependencies.serverProviderDependenciesFactory())
+    }
     public func confirmTrust() {
-        guard isTrusted(promptIfNeeded: true) else {
+        guard dependencies.isTrusted(true) else {
             // If you already added ScreenReader
             // to trusted apps, it's likely that changing the
             // binary has invalidated it's AX API access.
             // You can usually reauthorize it by unchecking and
             // rechecking it's entry in the list of apps
             // with AX API access in System Preferences.
-            Self.logger.error("Not Trusted")
+            dependencies.logger.error("Not Trusted")
             exit(1)
         }
     }
     public func start() async throws {
         runningApplicationsTask?.cancel()
-        let runningApplications = await WorkspaceRunningApplications()
+        let runningApplications = try await dependencies.runningApplicationsFactory()
         runningApplicationsTask = Task.detached { [weak self] in
             for await change in await runningApplications.stream() {
                 try Task.checkCancellation()
@@ -79,13 +79,13 @@ extension ScreenReader {
             do {
                 let server = try await serverProvider.connect(processIdentifier: key.processIdentifier,
                                                               bundleIdentifier: key.bundleIdentifier)
-                Self.logger.debug("Add \(key.processIdentifier) \(key.bundleIdentifier)")
+                dependencies.logger.debug("Add \(key.processIdentifier) \(key.bundleIdentifier)")
                 try await server.start()
                 running[key] = server
             } catch ServerProviderError.ignored {
-                Self.logger.error("Ignored \(key.processIdentifier) \(key.bundleIdentifier)")
+                dependencies.logger.error("Ignored \(key.processIdentifier) \(key.bundleIdentifier)")
             } catch {
-                Self.logger.error("\(error.localizedDescription)")
+                dependencies.logger.error("\(error.localizedDescription)")
             }
         }
     }
@@ -93,11 +93,11 @@ extension ScreenReader {
         for key in applications.identifiers() {
             if let server = running.removeValue(forKey: .init(processIdentifier: key.processIdentifier,
                                                               bundleIdentifier: key.bundleIdentifier)) {
-                Self.logger.debug("Remove \(key.processIdentifier) \(key.bundleIdentifier)")
+                dependencies.logger.debug("Remove \(key.processIdentifier) \(key.bundleIdentifier)")
                 do {
                     try await server.stop()
                 } catch {
-                    Self.logger.error("Server Stop Error: \(error.localizedDescription)")
+                    dependencies.logger.error("Server Stop Error: \(error.localizedDescription)")
                 }
             }
         }

@@ -10,19 +10,33 @@ import Foundation
 public actor Server {
     public let processIdentifier: pid_t
     public let bundleIdentifier: BundleIdentifier
-    private let application: Application
+    private let application: Controller
     public init(
         processIdentifier: pid_t,
-        bundleIdentifier: BundleIdentifier
+        bundleIdentifier: BundleIdentifier,
+        application: Controller
     ) async throws {
         self.processIdentifier = processIdentifier
         self.bundleIdentifier = bundleIdentifier
-        application = try await Application(processIdentifier: processIdentifier)
+        self.application = application
     }
     public func start() async throws {
         try await application.start()
     }
     public func stop() async throws {
         try await application.stop()
+    }
+}
+
+extension Server {
+    public convenience init(
+        processIdentifier: pid_t,
+        bundleIdentifier: BundleIdentifier
+    ) async throws {
+        try await self.init(
+            processIdentifier: processIdentifier,
+            bundleIdentifier: bundleIdentifier,
+            application: try await Application(processIdentifier: processIdentifier)
+        )
     }
 }
