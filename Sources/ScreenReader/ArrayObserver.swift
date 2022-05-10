@@ -74,36 +74,38 @@ public enum ArrayChange<Element>: Equatable where Element: Equatable {
 /// Repackage KVO updates to an observable array
 public final class ArrayObserver<Root, Element> where Root: NSObject, Element: Equatable {
     private let observer: NSKeyValueObservation
-    init(root: Root,
-         keypath: KeyPath<Root, [Element]>,
-         changeHandler: @escaping (ArrayChange<Element>) -> Void) {
+    init(
+        root: Root,
+        keypath: KeyPath<Root, [Element]>,
+        changeHandler: @escaping (ArrayChange<Element>) -> Void
+    ) {
         observer = root.observe(
             keypath,
             options: [.initial, .new, .old]
         ) { root, change in
-            switch change.kind {
-            case .setting:
-                guard let new = change.newValue else {
-                    return
-                }
-                changeHandler(.set(new))
-            case .insertion:
-                guard let new = change.newValue else {
-                    return
-                }
-                changeHandler(.insert(new))
-            case .removal:
-                guard let old = change.oldValue else {
-                    return
-                }
-                changeHandler(.remove(old))
-            case .replacement:
-                let old = change.oldValue ?? []
-                let new = change.newValue ?? []
-                changeHandler(.replace(old, new))
-            @unknown default:
-                break
+        switch change.kind {
+        case .setting:
+            guard let new = change.newValue else {
+                return
             }
+            changeHandler(.set(new))
+        case .insertion:
+            guard let new = change.newValue else {
+                return
+            }
+            changeHandler(.insert(new))
+        case .removal:
+            guard let old = change.oldValue else {
+                return
+            }
+            changeHandler(.remove(old))
+        case .replacement:
+            let old = change.oldValue ?? []
+            let new = change.newValue ?? []
+            changeHandler(.replace(old, new))
+        @unknown default:
+            break
         }
     }
+}
 }

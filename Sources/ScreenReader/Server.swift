@@ -14,8 +14,10 @@ public actor Server {
     public let processIdentifier: pid_t
     public let bundleIdentifier: BundleIdentifier
     private let application: Application
-    public init(processIdentifier: pid_t,
-                bundleIdentifier: BundleIdentifier) async throws {
+    public init(
+        processIdentifier: pid_t,
+        bundleIdentifier: BundleIdentifier
+    ) async throws {
         self.processIdentifier = processIdentifier
         self.bundleIdentifier = bundleIdentifier
         application = try await Application(processIdentifier: processIdentifier)
