@@ -15,10 +15,10 @@ let package = Package(
     dependencies: [
         .package(
             url: "https://github.com/rustle/AccessibilityElement.git",
-            from: "0.1.3"),
+            from: "0.1.5"),
         .package(
             url: "https://github.com/rustle/AX.git",
-            from: "0.1.2"),
+            from: "0.1.3"),
     ],
     targets: [
         .target(

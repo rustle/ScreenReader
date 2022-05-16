@@ -13,6 +13,9 @@ public actor Unknown<ObserverType: Observer>: Controller where ObserverType.Obse
     private let element: ElementType
     private let observer: ApplicationObserver<ObserverType>
     private var observerTokens: [ApplicationObserver<ObserverType>.ObserverToken] = []
+#if DEBUG
+    private var cachedDebugInfo: [String:Any]?
+#endif // DEBUG
     public init(
         element: ElementType,
         observer: ApplicationObserver<ObserverType>
@@ -22,11 +25,27 @@ public actor Unknown<ObserverType: Observer>: Controller where ObserverType.Obse
     }
     public func start() async throws {
         Loggers.unknown.info("\(#function) \(self.element)")
+#if DEBUG
+        if let element = element as? SystemElement {
+            cachedDebugInfo = element.debugInfo
+        } else {
+            cachedDebugInfo = ["Description": element.description]
+        }
+#endif // DEBUG
     }
     public func focus() async throws {
         Loggers.unknown.info("\(#function) \(self.element)")
     }
     public func stop() async throws {
+#if DEBUG
+        if let cachedDebugInfo = cachedDebugInfo {
+            Loggers.unknown.info("\(#function) \(self.element) \(cachedDebugInfo)")
+        } else {
+            Loggers.unknown.info("\(#function) \(self.element)")
+        }
+#else
+        Loggers.unknown.info("\(#function) \(self.element)")
+#endif // DEBUG
         do {
             for observerToken in observerTokens {
                 try await observer.remove(token: observerToken)

@@ -20,12 +20,18 @@ public actor ApplicationObserver<ObserverType: Observer>: Observer where Observe
         try await observer.start()
     }
 
+    public func stop() async throws {
+        try await observer.stop()
+    }
+
     private var observerTokens: [ApplicationObserverKey:ObserverType.ObserverToken] = [:]
     private var tokensForToken: [ObserverType.ObserverToken:[UUID:ObserverToken]] = [:]
 
-    public func add(element: ObserverElement,
-                    notification: NSAccessibility.Notification,
-                    handler: @escaping ObserverHandler) async throws -> ObserverToken {
+    public func add(
+        element: ObserverElement,
+        notification: NSAccessibility.Notification,
+        handler: @escaping ObserverHandler
+    ) async throws -> ObserverToken {
         let key = ApplicationObserverKey(
             element: element,
             notification: notification
@@ -117,19 +123,6 @@ extension ApplicationObserver {
             self.observer = observer
             self.key = key
             self.handler = handler
-        }
-        deinit {
-            guard let observer = observer else {
-                return
-            }
-            let key = self.key
-            let uuid = self.uuid
-            Task.detached {
-                try await observer.remove(
-                    key: key,
-                    uuid: uuid
-                )
-            }
         }
     }
 }

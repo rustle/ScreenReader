@@ -13,7 +13,11 @@ public actor Application<ObserverType: Observer>: Controller where ObserverType.
     public let element: ElementType
     private var observer: ApplicationObserver<ObserverType>?
     private var observerTokens: [ApplicationObserver<ObserverType>.ObserverToken] = []
-    private var windows: [ElementType:Window<ObserverType>] = [:]
+    private struct ControllerContext {
+        let token: ApplicationObserver<ObserverType>.ObserverToken
+        let controller: Controller
+    }
+    private var controllers: [ElementType:ControllerContext] = [:]
     private var focusedUIElement: Controller?
 
     private var observerFactory: () async throws -> ApplicationObserver<ObserverType>
@@ -29,7 +33,6 @@ public actor Application<ObserverType: Observer>: Controller where ObserverType.
         self.controllerFactory = controllerFactory
     }
     public func start() async throws {
-        precondition(observer != nil)
         let observer = try await observerFactory()
         self.observer = observer
         try await observer.start()
@@ -53,7 +56,9 @@ public actor Application<ObserverType: Observer>: Controller where ObserverType.
         }
     }
     public func stop() async throws {
-        observer = nil
+        guard let observer = observer else { return }
+        try await observer.stop()
+        self.observer = nil
     }
     private func windowCreated(
         window: ElementType,
@@ -62,13 +67,23 @@ public actor Application<ObserverType: Observer>: Controller where ObserverType.
         Loggers.application.info("\(#function) \(window)")
         do {
             try await self.add(window: window)
-        } catch {}
+        } catch {
+            Loggers.application.error("\(error.localizedDescription)")
+        }
     }
-    private func windowDestroyed(
-        window: ElementType,
+    private func uiElementDestroyed(
+        element: ElementType,
         userInfo: [String:Any]?
     ) async {
-        Loggers.application.info("\(#function) \(window)")
+        Loggers.application.info("\(#function) \(element)")
+        do {
+            guard let observer = observer else { return }
+            guard let context = controllers.removeValue(forKey: element) else { return }
+            try await observer.remove(token: context.token)
+            try await context.controller.stop()
+        } catch {
+            Loggers.application.error("\(error.localizedDescription)")
+        }
     }
     private func focusedWindowChanged(
         window: ElementType,
@@ -104,20 +119,19 @@ public actor Application<ObserverType: Observer>: Controller where ObserverType.
     }
     private func add(window: ElementType) async throws {
         guard let observer = observer else { return }
-        do {
-            observerTokens.append(try await observer.add(
-                element: element,
-                notification: .uiElementDestroyed,
-                handler: isolated(action: Application.windowDestroyed))
-            )
-        } catch {
-            Loggers.application.error("\(error.localizedDescription)")
-        }
+        let token = try await observer.add(
+            element: element,
+            notification: .uiElementDestroyed,
+            handler: isolated(action: Application.uiElementDestroyed)
+        )
         let windowController = try await Window(
             element: window,
             observer: observer
         )
-        windows[window] = windowController
+        controllers[window] = .init(
+            token: token,
+            controller: windowController
+        )
         try await windowController.start()
     }
 }
@@ -167,7 +181,7 @@ extension Application where ObserverType == SystemObserver {
     public convenience init(processIdentifier: pid_t) async throws {
         try await self.init(
             element: try .application(processIdentifier: processIdentifier),
-            observerFactory: { .init(observer: try await .init(pid: processIdentifier)) },
+            observerFactory: { .init(observer: try .init(processIdentifier: processIdentifier)) },
             controllerFactory: Application.controller(element:observer:)
         )
     }
