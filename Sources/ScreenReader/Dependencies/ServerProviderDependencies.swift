@@ -5,18 +5,18 @@
 //
 
 import Foundation
-import os
+@preconcurrency import os
 
-public struct ServerProviderDependencies {
+public struct ServerProviderDependencies: Sendable {
     public let logger = Logger(
         subsystem: "ScreenReader",
         category: "ServerProvider"
     )
-    public let inclusionListFactory: () -> Set<BundleIdentifier>
-    public let exclusionListFactory: () -> Set<BundleIdentifier>
+    public let inclusionListFactory: @Sendable () -> Set<BundleIdentifier>
+    public let exclusionListFactory: @Sendable () -> Set<BundleIdentifier>
     public init(
-        inclusionListFactory: @escaping () -> Set<BundleIdentifier>,
-        exclusionListFactory: @escaping () -> Set<BundleIdentifier>
+        inclusionListFactory: @escaping @Sendable () -> Set<BundleIdentifier>,
+        exclusionListFactory: @escaping @Sendable () -> Set<BundleIdentifier>
     ) {
         self.inclusionListFactory = inclusionListFactory
         self.exclusionListFactory = exclusionListFactory

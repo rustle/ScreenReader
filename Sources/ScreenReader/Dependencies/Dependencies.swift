@@ -6,12 +6,12 @@
 
 import Foundation
 
-public struct Dependencies {
-    public let screenReaderDependenciesFactory: () -> ScreenReaderDependencies
-    public let serverProviderDependenciesFactory: () -> ServerProviderDependencies
+public struct Dependencies: Sendable {
+    public let screenReaderDependenciesFactory: @Sendable () -> ScreenReaderDependencies
+    public let serverProviderDependenciesFactory: @Sendable () -> ServerProviderDependencies
     public init(
-        screenReaderDependenciesFactory: @escaping () -> ScreenReaderDependencies,
-        serverProviderDependenciesFactory: @escaping () -> ServerProviderDependencies
+        screenReaderDependenciesFactory: @escaping @Sendable () -> ScreenReaderDependencies,
+        serverProviderDependenciesFactory: @escaping @Sendable () -> ServerProviderDependencies
     ) {
         self.screenReaderDependenciesFactory = screenReaderDependenciesFactory
         self.serverProviderDependenciesFactory = serverProviderDependenciesFactory

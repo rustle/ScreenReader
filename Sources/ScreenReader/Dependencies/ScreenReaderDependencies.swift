@@ -5,18 +5,18 @@
 //
 
 import Foundation
-import os
+@preconcurrency import os
 
-public struct ScreenReaderDependencies {
+public struct ScreenReaderDependencies: Sendable {
     public let logger = Logger(
         subsystem: "ScreenReader",
         category: "ScreenReader"
     )
-    public let isTrusted: (Bool) -> Bool
-    public let runningApplicationsFactory: () async throws -> RunningApplications
+    public let isTrusted: @Sendable (Bool) -> Bool
+    public let runningApplicationsFactory: @Sendable () async throws -> RunningApplications
     public init(
-        isTrusted: @escaping (Bool) -> Bool,
-        runningApplicationsFactory: @escaping () async throws -> RunningApplications
+        isTrusted: @escaping @Sendable (Bool) -> Bool,
+        runningApplicationsFactory: @escaping @Sendable () async throws -> RunningApplications
     ) {
         self.isTrusted = isTrusted
         self.runningApplicationsFactory = runningApplicationsFactory
