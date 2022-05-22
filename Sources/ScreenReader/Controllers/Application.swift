@@ -8,6 +8,10 @@ import AccessibilityElement
 import Cocoa
 import os
 
+public enum ApplicationError: Error {
+    case observerError(ObserverError)
+}
+
 public actor Application<ObserverType: Observer>: Controller where ObserverType.ObserverElement: Hashable {
     public typealias ElementType = ObserverType.ObserverElement
     public let element: ElementType
@@ -33,9 +37,16 @@ public actor Application<ObserverType: Observer>: Controller where ObserverType.
         self.controllerFactory = controllerFactory
     }
     public func start() async throws {
-        let observer = try await observerFactory()
+        let observer:ApplicationObserver<ObserverType>
+        do {
+            observer = try await observerFactory()
+            try await observer.start()
+        } catch let error as ObserverError {
+            throw ApplicationError.observerError(error)
+        } catch {
+            throw error
+        }
         self.observer = observer
-        try await observer.start()
         observerTokens.append(try await observer.add(
             element: element,
             notification: .windowCreated,
