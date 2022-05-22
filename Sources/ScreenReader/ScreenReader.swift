@@ -6,7 +6,7 @@
 
 import Cocoa
 
-public final class ScreenReader {
+public actor ScreenReader {
     private let serverProvider: ServerProvider
     private var runningApplicationsTask: Task<Void, Error>?
     private let dependencies: ScreenReaderDependencies
