@@ -7,6 +7,10 @@
 import AccessibilityElement
 import Foundation
 
+public enum ServerError: Error {
+    case application(ApplicationError)
+}
+
 public actor Server {
     public let processIdentifier: pid_t
     public let bundleIdentifier: BundleIdentifier
@@ -21,10 +25,22 @@ public actor Server {
         self.application = application
     }
     public func start() async throws {
-        try await application.start()
+        do {
+            try await application.start()
+        } catch let error as ApplicationError {
+            throw ServerError.application(error)
+        } catch {
+            throw error
+        }
     }
     public func stop() async throws {
-        try await application.stop()
+        do {
+            try await application.stop()
+        } catch let error as ApplicationError {
+            throw ServerError.application(error)
+        } catch {
+            throw error
+        }
     }
 }
 
