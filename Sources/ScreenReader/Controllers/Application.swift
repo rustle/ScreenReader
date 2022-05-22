@@ -47,23 +47,30 @@ public actor Application<ObserverType: Observer>: Controller where ObserverType.
             throw error
         }
         self.observer = observer
-        observerTokens.append(try await observer.add(
-            element: element,
-            notification: .windowCreated,
-            handler: isolated(action: Application.windowCreated))
-        )
-        observerTokens.append(try await observer.add(
-            element: element,
-            notification: .focusedWindowChanged,
-            handler: isolated(action: Application.focusedWindowChanged))
-        )
-        observerTokens.append(try await observer.add(
-            element: element,
-            notification: .focusedUIElementChanged,
-            handler: isolated(action: Application.focusedUIElementChanged))
-        )
+        do {
+            observerTokens.append(try await observer.add(
+                element: element,
+                notification: .windowCreated,
+                handler: isolated(action: Application.windowCreated)
+            ))
+        } catch {
+            Loggers.application.error("\(error.localizedDescription)")
+        }
+        do {
+            observerTokens.append(try await observer.add(
+                element: element,
+                notification: .focusedWindowChanged,
+                handler: isolated(action: Application.focusedWindowChanged)
+            ))
+        } catch {
+            Loggers.application.error("\(error.localizedDescription)")
+        }
         for window in try element.windows() {
-            try await add(window: window)
+            do {
+                try await add(window: window)
+            } catch {
+                Loggers.application.error("\(error.localizedDescription)")
+            }
         }
     }
     public func stop() async throws {
