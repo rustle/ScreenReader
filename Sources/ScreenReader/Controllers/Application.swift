@@ -181,6 +181,11 @@ extension Application {
                 element: element,
                 observer: observer
             )
+        case .textArea:
+            return try await TextArea(
+                element: element,
+                observer: observer
+            )
         case .window:
             return try await Window(
                 element: element,

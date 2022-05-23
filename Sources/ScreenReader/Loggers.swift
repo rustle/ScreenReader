@@ -27,6 +27,10 @@ struct Loggers {
         subsystem: "ScreenReader",
         category: "Table"
     )
+    static let textArea = Logger(
+        subsystem: "ScreenReader",
+        category: "TextArea"
+    )
     static let unknown = Logger(
         subsystem: "ScreenReader",
         category: "Unknown"
