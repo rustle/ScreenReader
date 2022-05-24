@@ -15,7 +15,7 @@ let package = Package(
     dependencies: [
         .package(
             url: "https://github.com/rustle/AccessibilityElement.git",
-            from: "0.1.6"),
+            from: "0.1.7"),
         .package(
             url: "https://github.com/rustle/AX.git",
             from: "0.1.3"),
