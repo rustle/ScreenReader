@@ -21,16 +21,26 @@ public actor TextArea<ObserverType: Observer>: Controller where ObserverType.Obs
     }
     public func start() async throws {
         Loggers.textArea.info("\(#function) \(self.element)")
-        observerTokens.append(try await observer.add(
-            element: element,
-            notification: .valueChanged,
-            handler: isolated(action: TextArea<ObserverType>.valueChanged)
-        ))
-        observerTokens.append(try await observer.add(
-            element: element,
-            notification: .selectedTextChanged,
-            handler: isolated(action: TextArea<ObserverType>.selectedTextChanged)
-        ))
+        do {
+            observerTokens.append(try await add(
+                notification: .valueChanged,
+                handler: isolated(action: TextArea<ObserverType>.valueChanged)
+            ))
+        } catch let error as ControllerObserverError {
+            Loggers.textArea.info("\(error.localizedDescription)")
+        } catch {
+            throw error
+        }
+        do {
+            observerTokens.append(try await add(
+                notification: .selectedTextChanged,
+                handler: isolated(action: TextArea<ObserverType>.selectedTextChanged)
+            ))
+        } catch let error as ControllerObserverError {
+            Loggers.textArea.info("\(error.localizedDescription)")
+        } catch {
+            throw error
+        }
     }
     public func focus() async throws {
         Loggers.textArea.info("\(#function) \(self.element)")
@@ -45,13 +55,13 @@ public actor TextArea<ObserverType: Observer>: Controller where ObserverType.Obs
     }
     private func valueChanged(
         element: ElementType,
-        userInfo: [String:Any]
+        userInfo: [String:Any]?
     ) async {
         //Loggers.textArea.info("\(#function) \(element)")
     }
     private func selectedTextChanged(
         element: ElementType,
-        userInfo: [String:Any]
+        userInfo: [String:Any]?
     ) async {
         //Loggers.textArea.info("\(#function) \(element)")
     }

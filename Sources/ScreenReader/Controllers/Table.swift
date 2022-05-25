@@ -22,11 +22,16 @@ public actor Table<ObserverType: Observer>: Controller where ObserverType.Observ
     }
     public func start() async throws {
         Loggers.table.info("\(#function) \(self.element)")
-        observerTokens.append(try await observer.add(
-            element: element,
-            notification: .selectedRowsChanged,
-            handler: isolated(action: Table<ObserverType>.selectedRowsChanged)
-        ))
+        do {
+            observerTokens.append(try await add(
+                notification: .selectedRowsChanged,
+                handler: isolated(action: Table<ObserverType>.selectedRowsChanged)
+            ))
+        } catch let error as ControllerObserverError {
+            Loggers.list.info("\(error.localizedDescription)")
+        } catch {
+            throw error
+        }
     }
     public func focus() async throws {
         Loggers.table.info("\(#function) \(self.element)")
@@ -41,7 +46,7 @@ public actor Table<ObserverType: Observer>: Controller where ObserverType.Observ
     }
     private func selectedRowsChanged(
         element: ElementType,
-        userInfo: [String:Any]
+        userInfo: [String:Any]?
     ) async {
         Loggers.table.info("\(#function) \(element)")
     }

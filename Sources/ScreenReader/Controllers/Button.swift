@@ -21,6 +21,16 @@ public actor Button<ObserverType: Observer>: Controller where ObserverType.Obser
     }
     public func start() async throws {
         Loggers.button.info("\(#function) \(self.element)")
+        do {
+            observerTokens.append(try await add(
+                notification: .valueChanged,
+                handler: isolated(action: Button<ObserverType>.valueChanged)
+            ))
+        } catch let error as ControllerObserverError {
+            Loggers.button.info("\(error.localizedDescription)")
+        } catch {
+            throw error
+        }
     }
     public func focus() async throws {
         Loggers.button.info("\(#function) \(self.element)")
@@ -34,6 +44,12 @@ public actor Button<ObserverType: Observer>: Controller where ObserverType.Obser
             Loggers.button.error("\(error.localizedDescription)")
         }
         observerTokens.removeAll()
+    }
+    private func valueChanged(
+        element: ElementType,
+        userInfo: [String:Any]?
+    ) async {
+        Loggers.button.info("\(#function) \(element)")
     }
 }
 

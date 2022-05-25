@@ -47,20 +47,26 @@ public actor Application<ObserverType: Observer>: Controller where ObserverType.
         }
         self.observer = observer
         do {
-            observerTokens.append(try await observer.add(
+            observerTokens.append(try await Self.add(
+                observer: observer,
                 element: element,
                 notification: .windowCreated,
                 handler: isolated(action: Application.windowCreated)
             ))
+        } catch let error as ControllerObserverError {
+            Loggers.application.info("\(error.localizedDescription)")
         } catch {
             Loggers.application.error("\(error.localizedDescription)")
         }
         do {
-            observerTokens.append(try await observer.add(
+            observerTokens.append(try await Self.add(
+                observer: observer,
                 element: element,
                 notification: .focusedWindowChanged,
                 handler: isolated(action: Application.focusedWindowChanged)
             ))
+        } catch let error as ControllerObserverError {
+            Loggers.application.info("\(error.localizedDescription)")
         } catch {
             Loggers.application.error("\(error.localizedDescription)")
         }
@@ -144,20 +150,26 @@ public actor Application<ObserverType: Observer>: Controller where ObserverType.
     }
     private func add(window: ElementType) async throws {
         guard let observer = observer else { return }
-        let token = try await observer.add(
-            element: element,
-            notification: .uiElementDestroyed,
-            handler: isolated(action: Application.uiElementDestroyed)
-        )
-        let windowController = try await Window(
-            element: window,
-            observer: observer
-        )
-        controllers[window] = .init(
-            token: token,
-            controller: windowController
-        )
-        try await windowController.start()
+        do {
+            let controller = try await Window(
+                element: window,
+                observer: observer
+            )
+            controllers[window] = .init(
+                token: try await Self.add(
+                    observer: observer,
+                    element: element,
+                    notification: .uiElementDestroyed,
+                    handler: isolated(action: Application.uiElementDestroyed)
+                ),
+                controller: controller
+            )
+            try await controller.start()
+        } catch let error as ControllerObserverError {
+            Loggers.application.info("\(error.localizedDescription)")
+        } catch {
+            throw error
+        }
     }
 }
 

@@ -22,11 +22,16 @@ public actor List<ObserverType: Observer>: Controller where ObserverType.Observe
     }
     public func start() async throws {
         Loggers.list.info("\(#function) \(self.element)")
-        observerTokens.append(try await observer.add(
-            element: element,
-            notification: .selectedChildrenChanged,
-            handler: isolated(action: List<ObserverType>.selectedChildrenChanged)
-        ))
+        do {
+            observerTokens.append(try await add(
+                notification: .selectedChildrenChanged,
+                handler: isolated(action: List<ObserverType>.selectedChildrenChanged)
+            ))
+        } catch let error as ControllerObserverError {
+            Loggers.list.info("\(error.localizedDescription)")
+        } catch {
+            throw error
+        }
     }
     public func stop() async throws {
         do {
@@ -40,7 +45,7 @@ public actor List<ObserverType: Observer>: Controller where ObserverType.Observe
     }
     private func selectedChildrenChanged(
         element: ElementType,
-        userInfo: [String:Any]
+        userInfo: [String:Any]?
     ) async {
         Loggers.list.info("\(#function) \(element)")
     }
