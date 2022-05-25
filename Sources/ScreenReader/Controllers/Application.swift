@@ -71,6 +71,14 @@ public actor Application<ObserverType: Observer>: Controller where ObserverType.
                 Loggers.application.error("\(error.localizedDescription)")
             }
         }
+        do {
+            await focusedUIElementChanged(
+                element: try element.focusedUIElement(),
+                userInfo: nil
+            )
+        } catch {
+            Loggers.application.error("\(error.localizedDescription)")
+        }
     }
     public func stop() async throws {
         guard let observer = observer else { return }
