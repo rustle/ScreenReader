@@ -21,6 +21,7 @@ enum ControllerObserverError: Error {
     case notImplemented
     case notificationUnsupported
     case invalidUIElement
+    case cannotComplete
 }
 
 extension Controller {
@@ -44,6 +45,8 @@ extension Controller {
                 throw ControllerObserverError.notificationUnsupported
             case .invalidUIElement:
                 throw ControllerObserverError.invalidUIElement
+            case .cannotComplete:
+                throw ControllerObserverError.cannotComplete
             default:
                 throw error
             }
