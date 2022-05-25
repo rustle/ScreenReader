@@ -16,15 +16,11 @@ public actor Application<ObserverType: Observer>: Controller where ObserverType.
     public let element: ElementType
     private var observer: ApplicationObserver<ObserverType>?
     private var observerTokens: [ApplicationObserver<ObserverType>.ObserverToken] = []
-    private struct ControllerContext {
-        let token: ApplicationObserver<ObserverType>.ObserverToken
-        let controller: Controller
-    }
-    private var controllers: [ElementType:ControllerContext] = [:]
     private var focusedUIElement: Controller?
 
     private var observerFactory: () async throws -> ApplicationObserver<ObserverType>
     private var controllerFactory: (ElementType, ApplicationObserver<ObserverType>) async throws -> Controller
+    private var hierarchy: ControllerHierarchy<ObserverType>?
 
     public init(
         element: ElementType,
@@ -37,8 +33,14 @@ public actor Application<ObserverType: Observer>: Controller where ObserverType.
     }
     public func start() async throws {
         let observer:ApplicationObserver<ObserverType>
+        let hierarchy: ControllerHierarchy<ObserverType>
         do {
             observer = try await observerFactory()
+            hierarchy = try await ControllerHierarchy(
+                application: self,
+                observer: observer,
+                controllerFactory: controllerFactory
+            )
             try await observer.start()
         } catch let error as ObserverError {
             throw ApplicationError.observerError(error)
@@ -46,6 +48,7 @@ public actor Application<ObserverType: Observer>: Controller where ObserverType.
             throw error
         }
         self.observer = observer
+        self.hierarchy = hierarchy
         do {
             observerTokens.append(try await Self.add(
                 observer: observer,
@@ -72,7 +75,10 @@ public actor Application<ObserverType: Observer>: Controller where ObserverType.
         }
         for window in try element.windows() {
             do {
-                try await add(window: window)
+                try await hierarchy.controller(
+                    element: window,
+                    observer: observer
+                )
             } catch {
                 Loggers.application.error("\(error.localizedDescription)")
             }
@@ -95,32 +101,33 @@ public actor Application<ObserverType: Observer>: Controller where ObserverType.
         window: ElementType,
         userInfo: [String:Any]?
     ) async {
-        Loggers.application.info("\(#function) \(window)")
+        Loggers.application.info("\(#function):\(#line) \(window)")
         do {
-            try await self.add(window: window)
-        } catch {
-            Loggers.application.error("\(error.localizedDescription)")
-        }
-    }
-    private func uiElementDestroyed(
-        element: ElementType,
-        userInfo: [String:Any]?
-    ) async {
-        Loggers.application.info("\(#function) \(element)")
-        do {
+            guard let hierarchy = hierarchy else { return }
             guard let observer = observer else { return }
-            guard let context = controllers.removeValue(forKey: element) else { return }
-            try await observer.remove(token: context.token)
-            try await context.controller.stop()
+            try await hierarchy.controller(
+                element: window,
+                observer: observer
+            )
         } catch {
-            Loggers.application.error("\(error.localizedDescription)")
+            Loggers.application.error("\(#function):\(#line) \(error.localizedDescription)")
         }
     }
     private func focusedWindowChanged(
-        window: ElementType,
+        element: ElementType,
         userInfo: [String:Any]?
     ) async {
-        Loggers.application.info("\(#function) \(window)")
+        Loggers.application.info("\(#function):\(#line) \(element)")
+        guard let observer = observer else { return }
+        do {
+            try await Self.controller(
+                element: try element.focusedWindow(),
+                observer: observer
+            )
+                .focus()
+        } catch {
+            Loggers.application.error("\(#function):\(#line) \(error.localizedDescription)")
+        }
     }
     private func focusedUIElementChanged(
         element: ElementType,
@@ -146,29 +153,6 @@ public actor Application<ObserverType: Observer>: Controller where ObserverType.
             try await focusedUIElement?.focus()
         } catch {
             Loggers.application.error("\(error.localizedDescription)")
-        }
-    }
-    private func add(window: ElementType) async throws {
-        guard let observer = observer else { return }
-        do {
-            let controller = try await Window(
-                element: window,
-                observer: observer
-            )
-            controllers[window] = .init(
-                token: try await Self.add(
-                    observer: observer,
-                    element: element,
-                    notification: .uiElementDestroyed,
-                    handler: isolated(action: Application.uiElementDestroyed)
-                ),
-                controller: controller
-            )
-            try await controller.start()
-        } catch let error as ControllerObserverError {
-            Loggers.application.info("\(error.localizedDescription)")
-        } catch {
-            throw error
         }
     }
 }

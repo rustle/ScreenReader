@@ -43,4 +43,8 @@ struct Loggers {
         subsystem: "ScreenReader",
         category: "Server"
     )
+    static let hierarchy = Logger(
+        subsystem: "ScreenReader",
+        category: "Hierarchy"
+    )
 }
