@@ -25,13 +25,27 @@ public actor Table<ObserverType: Observer>: Controller where ObserverType.Observ
         do {
             observerTokens.append(try await add(
                 notification: .selectedRowsChanged,
-                handler: isolated(action: Table<ObserverType>.selectedRowsChanged)
+                handler: isolated(action: Table<ObserverType>.selectionChanged)
             ))
         } catch let error as ControllerObserverError {
             Loggers.list.info("\(error.localizedDescription)")
         } catch {
             throw error
         }
+        do {
+            observerTokens.append(try await add(
+                notification: .selectedColumnsChanged,
+                handler: isolated(action: Table<ObserverType>.selectionChanged)
+            ))
+        } catch let error as ControllerObserverError {
+            Loggers.list.info("\(error.localizedDescription)")
+        } catch {
+            throw error
+        }
+        await selectionChanged(
+            element: element,
+            userInfo: nil
+        )
     }
     public func focus() async throws {
         Loggers.table.info("\(#function) \(self.element)")
@@ -44,11 +58,17 @@ public actor Table<ObserverType: Observer>: Controller where ObserverType.Observ
         } catch {}
         observerTokens.removeAll()
     }
-    private func selectedRowsChanged(
+    private func selectionChanged(
         element: ElementType,
         userInfo: [String:Any]?
     ) async {
         Loggers.table.info("\(#function) \(element)")
+        do {
+            let cells = try element.selectedCells()
+            Loggers.list.info("\(#function) \(cells)")
+        } catch {
+            Loggers.list.error("\(#function) \(error.localizedDescription)")
+        }
     }
 }
 
