@@ -32,6 +32,10 @@ public actor List<ObserverType: Observer>: Controller where ObserverType.Observe
         } catch {
             throw error
         }
+        await selectedChildrenChanged(
+            element: element,
+            userInfo: nil
+        )
     }
     public func stop() async throws {
         do {
@@ -48,6 +52,12 @@ public actor List<ObserverType: Observer>: Controller where ObserverType.Observe
         userInfo: [String:Any]?
     ) async {
         Loggers.list.info("\(#function) \(element)")
+        do {
+            let children = try element.selectedChildren()
+            Loggers.list.info("\(#function) \(children)")
+        } catch {
+            Loggers.list.error("\(#function) \(error.localizedDescription)")
+        }
     }
 }
 
