@@ -11,7 +11,7 @@ import os
 public actor Table<ObserverType: Observer>: Controller where ObserverType.ObserverElement: Hashable {
     public typealias ElementType = ObserverType.ObserverElement
     public let element: ElementType
-    private let observer: ApplicationObserver<ObserverType>
+    let observer: ApplicationObserver<ObserverType>
     private var observerTokens: [ApplicationObserver<ObserverType>.ObserverToken] = []
     public init(
         element: ElementType,
@@ -46,3 +46,5 @@ public actor Table<ObserverType: Observer>: Controller where ObserverType.Observ
         Loggers.table.info("\(#function) \(element)")
     }
 }
+
+extension Table: ObserverHosting {}

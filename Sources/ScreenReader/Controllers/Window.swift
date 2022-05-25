@@ -11,7 +11,7 @@ import os
 public actor Window<ObserverType: Observer>: Controller where ObserverType.ObserverElement: Hashable {
     public typealias ElementType = ObserverType.ObserverElement
     public let element: ElementType
-    private let observer: ApplicationObserver<ObserverType>
+    let observer: ApplicationObserver<ObserverType>
     private var observerTokens: [ApplicationObserver<ObserverType>.ObserverToken] = []
     public init(
         element: ElementType,
@@ -35,3 +35,5 @@ public actor Window<ObserverType: Observer>: Controller where ObserverType.Obser
         observerTokens.removeAll()
     }
 }
+
+extension Window: ObserverHosting {}
