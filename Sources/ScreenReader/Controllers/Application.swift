@@ -6,7 +6,6 @@
 
 import AccessibilityElement
 import Cocoa
-import os
 
 public enum ApplicationError: Error {
     case observerError(ObserverError)
