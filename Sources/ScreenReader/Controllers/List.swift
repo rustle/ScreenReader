@@ -10,7 +10,7 @@ import os
 
 public actor List<ObserverType: Observer>: Controller where ObserverType.ObserverElement: Hashable {
     public typealias ElementType = ObserverType.ObserverElement
-    private let element: ElementType
+    public let element: ElementType
     private let observer: ApplicationObserver<ObserverType>
     private var observerTokens: [ApplicationObserver<ObserverType>.ObserverToken] = []
     public init(
