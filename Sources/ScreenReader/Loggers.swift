@@ -44,6 +44,10 @@ struct Loggers {
             subsystem: "ScreenReader",
             category: "Unknown"
         )
+        static let webArea = Logger(
+            subsystem: "ScreenReader",
+            category: "WebArea"
+        )
         static let window = Logger(
             subsystem: "ScreenReader",
             category: "Window"

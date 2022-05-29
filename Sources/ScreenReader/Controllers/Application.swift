@@ -191,6 +191,11 @@ extension Application {
                 element: element,
                 observer: observer
             )
+        case .webArea:
+            return try await WebArea(
+                element: element,
+                observer: observer
+            )
         case .window:
             return try await Window(
                 element: element,
