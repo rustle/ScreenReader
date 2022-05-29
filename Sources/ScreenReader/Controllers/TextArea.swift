@@ -20,14 +20,14 @@ public actor TextArea<ObserverType: Observer>: Controller where ObserverType.Obs
         self.observer = observer
     }
     public func start() async throws {
-        Loggers.textArea.info("\(#function) \(self.element)")
+        Loggers.Controller.textArea.info("\(#function) \(self.element)")
         do {
             observerTokens.append(try await add(
                 notification: .valueChanged,
                 handler: isolated(action: TextArea<ObserverType>.valueChanged)
             ))
         } catch let error as ControllerObserverError {
-            Loggers.textArea.info("\(error.localizedDescription)")
+            Loggers.Controller.textArea.info("\(error.localizedDescription)")
         } catch {
             throw error
         }
@@ -37,13 +37,13 @@ public actor TextArea<ObserverType: Observer>: Controller where ObserverType.Obs
                 handler: isolated(action: TextArea<ObserverType>.selectedTextChanged)
             ))
         } catch let error as ControllerObserverError {
-            Loggers.textArea.info("\(error.localizedDescription)")
+            Loggers.Controller.textArea.info("\(error.localizedDescription)")
         } catch {
             throw error
         }
     }
     public func focus() async throws {
-        Loggers.textArea.info("\(#function) \(self.element)")
+        Loggers.Controller.textArea.info("\(#function) \(self.element)")
     }
     public func stop() async throws {
         do {
@@ -57,13 +57,13 @@ public actor TextArea<ObserverType: Observer>: Controller where ObserverType.Obs
         element: ElementType,
         userInfo: [String:Any]?
     ) async {
-        //Loggers.textArea.info("\(#function) \(element)")
+        //Loggers.Controller.textArea.info("\(#function) \(element)")
     }
     private func selectedTextChanged(
         element: ElementType,
         userInfo: [String:Any]?
     ) async {
-        //Loggers.textArea.info("\(#function) \(element)")
+        //Loggers.Controller.textArea.info("\(#function) \(element)")
     }
 }
 

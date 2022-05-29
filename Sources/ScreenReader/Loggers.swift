@@ -7,38 +7,6 @@
 import os
 
 struct Loggers {
-    static let application = Logger(
-        subsystem: "ScreenReader",
-        category: "Application"
-    )
-    static let button = Logger(
-        subsystem: "ScreenReader",
-        category: "Button"
-    )
-    static let comboBox = Logger(
-        subsystem: "ScreenReader",
-        category: "ComboBox"
-    )
-    static let list = Logger(
-        subsystem: "ScreenReader",
-        category: "List"
-    )
-    static let table = Logger(
-        subsystem: "ScreenReader",
-        category: "Table"
-    )
-    static let textArea = Logger(
-        subsystem: "ScreenReader",
-        category: "TextArea"
-    )
-    static let unknown = Logger(
-        subsystem: "ScreenReader",
-        category: "Unknown"
-    )
-    static let window = Logger(
-        subsystem: "ScreenReader",
-        category: "Window"
-    )
     static let server = Logger(
         subsystem: "ScreenReader",
         category: "Server"
@@ -47,6 +15,40 @@ struct Loggers {
         subsystem: "ScreenReader",
         category: "Hierarchy"
     )
+    struct Controller {
+        static let application = Logger(
+            subsystem: "ScreenReader",
+            category: "Application"
+        )
+        static let button = Logger(
+            subsystem: "ScreenReader",
+            category: "Button"
+        )
+        static let comboBox = Logger(
+            subsystem: "ScreenReader",
+            category: "ComboBox"
+        )
+        static let list = Logger(
+            subsystem: "ScreenReader",
+            category: "List"
+        )
+        static let table = Logger(
+            subsystem: "ScreenReader",
+            category: "Table"
+        )
+        static let textArea = Logger(
+            subsystem: "ScreenReader",
+            category: "TextArea"
+        )
+        static let unknown = Logger(
+            subsystem: "ScreenReader",
+            category: "Unknown"
+        )
+        static let window = Logger(
+            subsystem: "ScreenReader",
+            category: "Window"
+        )
+    }
     struct Output {
         static let output = Logger(
             subsystem: "ScreenReader",

@@ -20,10 +20,10 @@ public actor ComboBox<ObserverType: Observer>: Controller where ObserverType.Obs
         self.observer = observer
     }
     public func start() async throws {
-        Loggers.comboBox.info("\(#function) \(self.element)")
+        Loggers.Controller.comboBox.info("\(#function) \(self.element)")
     }
     public func focus() async throws {
-        Loggers.comboBox.info("\(#function) \(self.element)")
+        Loggers.Controller.comboBox.info("\(#function) \(self.element)")
     }
     public func stop() async throws {
         do {
@@ -31,7 +31,7 @@ public actor ComboBox<ObserverType: Observer>: Controller where ObserverType.Obs
                 try await observer.remove(token: observerToken)
             }
         } catch {
-            Loggers.comboBox.error("\(error.localizedDescription)")
+            Loggers.Controller.comboBox.error("\(error.localizedDescription)")
         }
         observerTokens.removeAll()
     }
