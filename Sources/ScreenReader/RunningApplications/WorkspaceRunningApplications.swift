@@ -4,23 +4,24 @@
 //  Copyright © 2017-2022 Doug Russell. All rights reserved.
 //
 
+import AsyncAlgorithms
 import AppKit
 import Cocoa
 
 public actor WorkspaceRunningApplications: RunningApplications {
-    public var stream: AsyncStream<Change> {
-        _stream
+    public var channel: AsyncChannel<Change> {
+        _channel
     }
-    private let _stream: AsyncStream<ArrayChange<RunningApplication>>
+    private var _channel: AsyncChannel<Change>
     private let observer: ArrayObserver<NSWorkspace, NSRunningApplication>
     public init() {
-        let (stream, continuation) = AsyncStream<ArrayChange<RunningApplication>>.makeStream()
-        _stream = stream
+        let channel = AsyncChannel<Change>()
+        _channel = channel
         observer = ArrayObserver(
             root: NSWorkspace.shared,
             keypath: \.runningApplications
         ) { change in
-            continuation.yield(change.map({ runningApplication in
+            await channel.send(change.map({ runningApplication in
                 RunningApplication(processIdentifier: runningApplication.processIdentifier,
                                    bundleIdentifier: BundleIdentifier(runningApplication.bundleIdentifier ?? "unknown"))
             }))

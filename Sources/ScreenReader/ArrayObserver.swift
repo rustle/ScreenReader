@@ -89,35 +89,43 @@ public final class ArrayObserver<Root, Element> where Root: NSObject, Element: E
     init(
         root: Root,
         keypath: KeyPath<Root, [Element]>,
-        changeHandler: @escaping (ArrayChange<Element>) -> Void
+        changeHandler: @escaping (ArrayChange<Element>) async -> Void
     ) {
         observer = root.observe(
             keypath,
             options: [.initial, .new, .old]
         ) { root, change in
-        switch change.kind {
-        case .setting:
-            guard let new = change.newValue else {
-                return
+            switch change.kind {
+            case .setting:
+                guard let new = change.newValue else {
+                    return
+                }
+                Task {
+                    await changeHandler(.set(new))
+                }
+            case .insertion:
+                guard let new = change.newValue else {
+                    return
+                }
+                Task {
+                    await changeHandler(.insert(new))
+                }
+            case .removal:
+                guard let old = change.oldValue else {
+                    return
+                }
+                Task {
+                    await changeHandler(.remove(old))
+                }
+            case .replacement:
+                let old = change.oldValue ?? []
+                let new = change.newValue ?? []
+                Task {
+                    await changeHandler(.replace(old, new))
+                }
+            @unknown default:
+                break
             }
-            changeHandler(.set(new))
-        case .insertion:
-            guard let new = change.newValue else {
-                return
-            }
-            changeHandler(.insert(new))
-        case .removal:
-            guard let old = change.oldValue else {
-                return
-            }
-            changeHandler(.remove(old))
-        case .replacement:
-            let old = change.oldValue ?? []
-            let new = change.newValue ?? []
-            changeHandler(.replace(old, new))
-        @unknown default:
-            break
         }
     }
-}
 }
