@@ -4,27 +4,23 @@
 //  Copyright © 2017-2022 Doug Russell. All rights reserved.
 //
 
+import AsyncAlgorithms
 import Cocoa
 
-public actor WorkspaceRunningApplications: RunningApplications {
-    public var stream: AsyncStream<Change> {
+public final class WorkspaceRunningApplications: RunningApplications {
+    public var channel: AsyncChannel<Change> {
         get async {
-            _stream
+            _channel
         }
     }
-    private let _stream: AsyncStream<ArrayChange<NSRunningApplication>>
-    private let observer: ArrayObserver<NSWorkspace, NSRunningApplication>
+    private var _channel: AsyncChannel<Change> = .init()
+    private var observer: ArrayObserver<NSWorkspace, NSRunningApplication>
     public init(workspace: NSWorkspace = .shared) async {
-        // TODO: This can probably become an AsyncChannel to allow for backpressure
-        // TODO: This shouldn't have to depend on AsyncStream calling it's build closure right away to provide the continuation
-        var continuation: AsyncStream<ArrayChange<NSRunningApplication>>.Continuation!
-        _stream = AsyncStream<ArrayChange<NSRunningApplication>> { continuation = $0 }
-        assert(continuation != nil)
+        let channel = self._channel
         observer = ArrayObserver(
             root: workspace,
-            keypath: \.runningApplications
-        ) { change in
-            continuation.yield(change)
-        }
+            keypath: \.runningApplications,
+            changeHandler: channel.send
+        )
     }
 }

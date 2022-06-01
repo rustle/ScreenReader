@@ -32,7 +32,7 @@ public actor ScreenReader {
         runningApplicationsTask?.cancel()
         let runningApplications = try await dependencies.runningApplicationsFactory()
         runningApplicationsTask = await runningApplications
-            .stream
+            .channel
             .target(
                 self,
                 action: ScreenReader.handleApplication
@@ -66,6 +66,7 @@ private extension Array where Element == NSRunningApplication {
 
 extension ScreenReader {
     private func handleApplication(change: ArrayChange<NSRunningApplication>) async {
+        dependencies.logger.debug("\(String(describing: change))")
         switch change {
         case .insert(let applications):
             await add(applications: applications)
@@ -75,12 +76,16 @@ extension ScreenReader {
             await remove(applications: oldApplications)
             await add(applications: newApplications)
         case .set(let applications):
-            // TODO: Remove all
             await add(applications: applications)
         }
     }
     private func add(applications: [NSRunningApplication]) async {
         for key in applications.identifiers() {
+            guard !running.keys.contains(key) else {
+                // TODO: Confirm Server is in a good state (???) and possibly stop and re-add it
+                dependencies.logger.debug("Already Added: \(key.processIdentifier) \(key.bundleIdentifier)")
+                continue
+            }
             do {
                 let server = try await serverProvider.connect(
                     processIdentifier: key.processIdentifier,

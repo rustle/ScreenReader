@@ -8,6 +8,8 @@ import AccessibilityElement
 import Cocoa
 import os
 
+let ObserveFocusedWindowChanged = false
+
 public enum ApplicationError: Error {
     case observerError(ObserverError)
 }
@@ -76,6 +78,7 @@ public actor Application<ObserverType: Observer>: Controller where ObserverType.
         } catch {
             logger.error("\(error.localizedDescription)")
         }
+#if ObserveFocusedWindowChanged
         do {
             observerTokens.append(try await Self.add(
                 observer: observer,
@@ -88,6 +91,7 @@ public actor Application<ObserverType: Observer>: Controller where ObserverType.
         } catch {
             logger.error("\(error.localizedDescription)")
         }
+#endif // ObserveFocusedWindowChanged
         for window in try element.windows() {
             do {
                 try await hierarchy.controller(
@@ -128,6 +132,7 @@ public actor Application<ObserverType: Observer>: Controller where ObserverType.
             logger.error("\(#function):\(#line) \(error.localizedDescription)")
         }
     }
+#if ObserveFocusedWindowChanged
     private func focusedWindowChanged(
         element: ElementType,
         userInfo: [String:Any]?
@@ -144,6 +149,7 @@ public actor Application<ObserverType: Observer>: Controller where ObserverType.
             logger.error("\(#function):\(#line) \(error.localizedDescription)")
         }
     }
+#endif // ObserveFocusedWindowChanged
     private func focusedUIElementChanged(
         element: ElementType,
         userInfo: [String:Any]?
