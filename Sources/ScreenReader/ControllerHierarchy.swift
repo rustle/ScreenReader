@@ -58,7 +58,10 @@ actor ControllerHierarchy<ObserverType: AccessibilityElement.Observer> where Obs
         }
         var token: ApplicationObserver<ObserverType>.ApplicationObserverToken?
         do {
-            if try element.role() == .window {
+            switch try element.role() {
+            case .window:
+                fallthrough
+            case .webArea:
                 let t = try await observer.add(
                     element: element,
                     notification: .uiElementDestroyed,
@@ -66,6 +69,8 @@ actor ControllerHierarchy<ObserverType: AccessibilityElement.Observer> where Obs
                 )
                 observerTokens.insert(t)
                 token = t
+            default:
+                break
             }
         } catch {}
         let controller = try await controllerFactory(
