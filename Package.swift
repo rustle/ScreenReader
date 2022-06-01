@@ -22,6 +22,9 @@ let package = Package(
         .package(
             url: "https://github.com/rustle/TargetAction.git",
             from: "0.1.0"),
+        .package(
+            url: "https://github.com/apple/swift-async-algorithms",
+            from: "0.0.1"),
     ],
     targets: [
         .target(
@@ -30,6 +33,9 @@ let package = Package(
                 "AccessibilityElement",
                 "AX",
                 "TargetAction",
+                .product(
+                    name: "AsyncAlgorithms",
+                    package: "swift-async-algorithms"),
             ]),
         .testTarget(
             name: "ScreenReaderTests",
