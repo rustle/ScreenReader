@@ -53,7 +53,10 @@ actor ControllerHierarchy<ObserverType: AccessibilityElement.Observer> where Obs
         }
         var task: Task<Void, any Error>?
         do {
-            if try element.role() == .window {
+            switch try element.role() {
+            case .window:
+                fallthrough
+            case .webArea:
                 let stream = try await observer.stream(
                     element: element,
                     notification: .uiElementDestroyed
@@ -69,6 +72,8 @@ actor ControllerHierarchy<ObserverType: AccessibilityElement.Observer> where Obs
                 }
                 observerTasks.insert(t)
                 task = t
+            default:
+                break
             }
         } catch {}
         let controller = try await controllerFactory(

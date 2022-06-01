@@ -29,7 +29,8 @@ public actor Application<ObserverType: Observer>: Controller where ObserverType.
     private var observer: ApplicationObserver<ObserverType>?
     private var observerTasks: [Task<Void, any Error>] = []
 
-    private var focusedUIElement: Controller?
+    private var focus: [Controller] = []
+
     private let output: Output
     private var observerFactory: () async throws -> ApplicationObserver<ObserverType>
     private var controllerFactory: ControllerFactory
@@ -158,21 +159,19 @@ public actor Application<ObserverType: Observer>: Controller where ObserverType.
         guard let observer = observer else { return }
         logger.info("\(#function) \(element.description)")
         do {
-            try await focusedUIElement?.stop()
-        } catch {
-            logger.error("\(error.localizedDescription)")
-        }
-        do {
-            focusedUIElement = try await Self.controller(
-                element: element,
-                observer: observer
-            )
-        } catch {
-            logger.error("\(error.localizedDescription)")
-        }
-        do {
-            try await focusedUIElement?.start()
-            try await focusedUIElement?.focus()
+            var newFocus = [Controller]()
+            var current: ElementType? = element
+            while
+                current != nil,
+                current != self.element,
+                let parent = try current?.parent() {
+                newFocus.append(try await Self.controller(
+                    element: parent,
+                    observer: observer
+                ))
+                current = parent
+            }
+            focus = newFocus
         } catch {
             logger.error("\(#line):\(error.localizedDescription)")
         }
