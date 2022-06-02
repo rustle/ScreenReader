@@ -8,6 +8,7 @@ import Cocoa
 
 public actor ScreenReader {
     private let serverProvider: ServerProvider
+    private var runningApplications: RunningApplications?
     private var runningApplicationsTask: Task<Void, Error>?
     private let output = Output()
     private let dependencies: ScreenReaderDependencies
@@ -36,6 +37,7 @@ public actor ScreenReader {
                 await self?.handleApplication(change: change)
             }
         }
+        self.runningApplications = runningApplications
     }
     public func stop() async throws {
         runningApplicationsTask?.cancel()
