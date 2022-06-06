@@ -5,8 +5,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/rustle/AccessibilityElement.git",
       "state" : {
-        "revision" : "1c4d63c9053e0333b2b1ad01e7a8a14cce03a5b4",
-        "version" : "0.1.0"
+        "revision" : "b20366b699d296d907f09889f08ec02df776687a",
+        "version" : "0.1.11"
       }
     },
     {
@@ -14,8 +14,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/rustle/AX.git",
       "state" : {
-        "revision" : "bd462e332da5842727c795df44736e3df4cfd393",
-        "version" : "0.1.1"
+        "revision" : "c9dec2b6a27fca299ea9cc7ad3f3505b486dee12",
+        "version" : "0.1.6"
       }
     }
   ],
