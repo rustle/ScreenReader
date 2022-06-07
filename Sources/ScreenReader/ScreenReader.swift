@@ -56,8 +56,10 @@ private extension Array where Element == NSRunningApplication {
             guard let bundleIdentifier = BundleIdentifier(rawValue: application.bundleIdentifier) else {
                 return nil
             }
-            return .init(processIdentifier: application.processIdentifier,
-                         bundleIdentifier: bundleIdentifier)
+            return .init(
+                processIdentifier: application.processIdentifier,
+                bundleIdentifier: bundleIdentifier
+            )
         }
     }
 }
