@@ -20,6 +20,8 @@ public final class Table<ObserverType: Observer>: Controller where ObserverType.
     let observer: ApplicationObserver<ObserverType>
     private var observerTasks: [Task<Void, any Error>] = []
 
+    private var runState: RunState = .stopped
+
     public init(
         element: ElementType,
         observer: ApplicationObserver<ObserverType>
@@ -28,6 +30,7 @@ public final class Table<ObserverType: Observer>: Controller where ObserverType.
         self.observer = observer
     }
     public func start() async throws {
+        guard runState == .stopped else { return }
         logger.info("\(#function) \(self.element)")
         try await _add(
             notification: .selectedRowsChanged,
@@ -43,6 +46,7 @@ public final class Table<ObserverType: Observer>: Controller where ObserverType.
                 action: Table<ObserverType>.selectionChanged
             )
         )
+        runState = .started
         await selectionChanged(
             element: element,
             userInfo: nil
@@ -67,7 +71,9 @@ public final class Table<ObserverType: Observer>: Controller where ObserverType.
         logger.info("\(#function) \(self.element)")
     }
     public func stop() async throws {
+        guard runState == .started else { return }
         observerTasks.cancel()
+        runState = .stopped
     }
     private func selectionChanged(
         element: ElementType,

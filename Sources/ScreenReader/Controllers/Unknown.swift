@@ -19,6 +19,8 @@ public final class Unknown<ObserverType: Observer>: Controller where ObserverTyp
     let observer: ApplicationObserver<ObserverType>
     private var observerTasks: [Task<Void, any Error>] = []
 
+    private var runState: RunState = .stopped
+
 #if DEBUG
     private var cachedDebugInfo: [String:Any]?
 #endif // DEBUG
@@ -31,6 +33,7 @@ public final class Unknown<ObserverType: Observer>: Controller where ObserverTyp
         self.observer = observer
     }
     public func start() async throws {
+        guard runState == .stopped else { return }
         logger.info("\(#function) \(self.element)")
 #if DEBUG
         if let element = element as? SystemElement {

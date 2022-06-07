@@ -19,6 +19,8 @@ public final class ComboBox<ObserverType: Observer>: Controller where ObserverTy
     let observer: ApplicationObserver<ObserverType>
     private var observerTasks: [Task<Void, any Error>] = []
 
+    private var runState: RunState = .stopped
+
     public init(
         element: ElementType,
         observer: ApplicationObserver<ObserverType>
@@ -27,13 +29,17 @@ public final class ComboBox<ObserverType: Observer>: Controller where ObserverTy
         self.observer = observer
     }
     public func start() async throws {
+        guard runState == .stopped else { return }
         logger.info("\(#function) \(self.element)")
+        runState = .started
     }
     public func focus() async throws {
         logger.info("\(#function) \(self.element)")
     }
     public func stop() async throws {
+        guard runState == .started else { return }
         observerTasks.cancel()
+        runState = .stopped
     }
 }
 

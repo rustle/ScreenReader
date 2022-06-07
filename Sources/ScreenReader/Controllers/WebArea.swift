@@ -20,6 +20,8 @@ public final class WebArea<ObserverType: Observer>: Controller where ObserverTyp
     let observer: ApplicationObserver<ObserverType>
     private var observerTasks: [Task<Void, any Error>] = []
 
+    private var runState: RunState = .stopped
+
     public init(
         element: ElementType,
         observer: ApplicationObserver<ObserverType>
@@ -28,6 +30,7 @@ public final class WebArea<ObserverType: Observer>: Controller where ObserverTyp
         self.observer = observer
     }
     public func start() async throws {
+        guard runState == .stopped else { return }
         logger.info("\(#function) \(self.element)")
         do {
             observerTasks.append(try await add(
