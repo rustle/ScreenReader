@@ -136,7 +136,7 @@ public actor Application<ObserverType: Observer>: Controller where ObserverType.
         userInfo: [String:Any]?
     ) async {
         guard let observer = observer else { return }
-        Loggers.Controller.application.info("\(#function) \(element.debugDescription)")
+        Loggers.Controller.application.info("\(#function) \(element.description)")
         do {
             try await focusedUIElement?.stop()
         } catch {
