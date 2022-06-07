@@ -7,8 +7,10 @@
 import Cocoa
 
 public actor WorkspaceRunningApplications: RunningApplications {
-    public func stream() async -> AsyncStream<ArrayChange<NSRunningApplication>> {
-        _stream
+    public var stream: AsyncStream<Change> {
+        get async {
+            _stream
+        }
     }
     private let _stream: AsyncStream<ArrayChange<NSRunningApplication>>
     private let observer: ArrayObserver<NSWorkspace, NSRunningApplication>

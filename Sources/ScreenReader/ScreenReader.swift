@@ -31,12 +31,12 @@ public actor ScreenReader {
     public func start() async throws {
         runningApplicationsTask?.cancel()
         let runningApplications = try await dependencies.runningApplicationsFactory()
-        runningApplicationsTask = Task.detached { [weak self] in
-            for await change in await runningApplications.stream() {
-                try Task.checkCancellation()
-                await self?.handleApplication(change: change)
-            }
-        }
+        runningApplicationsTask = await runningApplications
+            .stream
+            .target(
+                self,
+                action: ScreenReader.handleApplication
+            )
         self.runningApplications = runningApplications
     }
     public func stop() async throws {

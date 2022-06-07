@@ -7,5 +7,6 @@
 import Cocoa
 
 public protocol RunningApplications {
-    func stream() async -> AsyncStream<ArrayChange<NSRunningApplication>>
+    typealias Change = ArrayChange<NSRunningApplication>
+    var stream: AsyncStream<Change> { get async }
 }
