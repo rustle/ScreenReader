@@ -19,6 +19,8 @@ public final class Window<ObserverType: Observer>: Controller where ObserverType
         Loggers.Controller.window
     }
 
+    private var runState: RunState = .stopped
+
     public init(
         element: ElementType,
         observer: ApplicationObserver<ObserverType>
@@ -27,9 +29,12 @@ public final class Window<ObserverType: Observer>: Controller where ObserverType
         self.observer = observer
     }
     public func start() async throws {
+        guard runState == .stopped else { return }
         logger.info("\(#function) \(self.element)")
+        runState = .started
     }
     public func stop() async throws {
+        guard runState == .started else { return }
         logger.info("\(#function) \(self.element)")
         do {
             try await remove(tokens: observerTokens)
@@ -37,6 +42,7 @@ public final class Window<ObserverType: Observer>: Controller where ObserverType
             logger.error("\(error.localizedDescription)")
         }
         observerTokens.removeAll()
+        runState = .stopped
     }
 }
 

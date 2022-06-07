@@ -25,6 +25,11 @@ enum ControllerObserverError: Error {
     case multiple([Error])
 }
 
+enum RunState {
+    case started
+    case stopped
+}
+
 extension Controller {
     static func add<ObserverType: Observer>(
         observer: ApplicationObserver<ObserverType>,

@@ -20,6 +20,8 @@ public final class TextArea<ObserverType: Observer>: Controller where ObserverTy
     let observer: ApplicationObserver<ObserverType>
     private var observerTokens: [ApplicationObserver<ObserverType>.ObserverToken] = []
 
+    private var runState: RunState = .stopped
+
     public init(
         element: ElementType,
         observer: ApplicationObserver<ObserverType>
@@ -28,6 +30,7 @@ public final class TextArea<ObserverType: Observer>: Controller where ObserverTy
         self.observer = observer
     }
     public func start() async throws {
+        guard runState == .stopped else { return }
         logger.info("\(#function) \(self.element)")
         do {
             observerTokens.append(try await add(
@@ -55,11 +58,13 @@ public final class TextArea<ObserverType: Observer>: Controller where ObserverTy
         } catch {
             throw error
         }
+        runState = .started
     }
     public func focus() async throws {
         logger.info("\(#function) \(self.element)")
     }
     public func stop() async throws {
+        guard runState == .started else { return }
         do {
             try await remove(tokens: observerTokens)
         } catch {
