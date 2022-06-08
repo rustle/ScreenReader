@@ -62,7 +62,7 @@ actor ControllerHierarchy<ObserverType: AccessibilityElement.Observer> where Obs
                 let t = try await observer.add(
                     element: element,
                     notification: .uiElementDestroyed,
-                    handler: isolated(action: ControllerHierarchy<ObserverType>.uiElementDestroyed)
+                    handler: target(action: ControllerHierarchy<ObserverType>.uiElementDestroyed)
                 )
                 observerTokens.insert(t)
                 token = t

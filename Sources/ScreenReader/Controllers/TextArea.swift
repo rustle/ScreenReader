@@ -24,7 +24,7 @@ public actor TextArea<ObserverType: Observer>: Controller where ObserverType.Obs
         do {
             observerTokens.append(try await add(
                 notification: .valueChanged,
-                handler: isolated(action: TextArea<ObserverType>.valueChanged)
+                handler: target(action: TextArea<ObserverType>.valueChanged)
             ))
         } catch let error as ControllerObserverError {
             Loggers.Controller.textArea.info("\(error.localizedDescription)")
@@ -34,7 +34,7 @@ public actor TextArea<ObserverType: Observer>: Controller where ObserverType.Obs
         do {
             observerTokens.append(try await add(
                 notification: .selectedTextChanged,
-                handler: isolated(action: TextArea<ObserverType>.selectedTextChanged)
+                handler: target(action: TextArea<ObserverType>.selectedTextChanged)
             ))
         } catch let error as ControllerObserverError {
             Loggers.Controller.textArea.info("\(error.localizedDescription)")

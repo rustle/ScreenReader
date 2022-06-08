@@ -6,6 +6,7 @@
 
 import AccessibilityElement
 import Foundation
+import TargetAction
 import os
 
 public actor Table<ObserverType: Observer>: Controller where ObserverType.ObserverElement: Hashable {
@@ -25,7 +26,7 @@ public actor Table<ObserverType: Observer>: Controller where ObserverType.Observ
         do {
             observerTokens.append(try await add(
                 notification: .selectedRowsChanged,
-                handler: isolated(action: Table<ObserverType>.selectionChanged)
+                handler: target(action: Table<ObserverType>.selectionChanged)
             ))
         } catch let error as ControllerObserverError {
             Loggers.Controller.table.info("\(error.localizedDescription)")
@@ -35,7 +36,7 @@ public actor Table<ObserverType: Observer>: Controller where ObserverType.Observ
         do {
             observerTokens.append(try await add(
                 notification: .selectedColumnsChanged,
-                handler: isolated(action: Table<ObserverType>.selectionChanged)
+                handler: target(action: Table<ObserverType>.selectionChanged)
             ))
         } catch let error as ControllerObserverError {
             Loggers.Controller.table.info("\(error.localizedDescription)")

@@ -25,7 +25,7 @@ public actor List<ObserverType: Observer>: Controller where ObserverType.Observe
         do {
             observerTokens.append(try await add(
                 notification: .selectedChildrenChanged,
-                handler: isolated(action: List<ObserverType>.selectedChildrenChanged)
+                handler: target(action: List<ObserverType>.selectedChildrenChanged)
             ))
         } catch let error as ControllerObserverError {
             Loggers.Controller.list.info("\(error.localizedDescription)")

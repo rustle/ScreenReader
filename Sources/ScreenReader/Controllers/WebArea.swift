@@ -24,7 +24,7 @@ public actor WebArea<ObserverType: Observer>: Controller where ObserverType.Obse
         do {
             observerTokens.append(try await add(
                 notification: .selectedTextChanged,
-                handler: isolated(action: WebArea<ObserverType>.selectedTextChanged)
+                handler: target(action: WebArea<ObserverType>.selectedTextChanged)
             ))
         } catch let error as ControllerObserverError {
             Loggers.Controller.webArea.info("\(error.localizedDescription)")

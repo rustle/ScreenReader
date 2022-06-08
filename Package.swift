@@ -19,6 +19,9 @@ let package = Package(
         .package(
             url: "https://github.com/rustle/AX.git",
             from: "0.1.6"),
+        .package(
+            url: "https://github.com/rustle/TargetAction.git",
+            from: "0.1.0"),
     ],
     targets: [
         .target(
@@ -26,6 +29,7 @@ let package = Package(
             dependencies: [
                 "AccessibilityElement",
                 "AX",
+                "TargetAction",
             ]),
         .testTarget(
             name: "ScreenReaderTests",

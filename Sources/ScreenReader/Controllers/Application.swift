@@ -56,7 +56,7 @@ public actor Application<ObserverType: Observer>: Controller where ObserverType.
                 observer: observer,
                 element: element,
                 notification: .windowCreated,
-                handler: isolated(action: Application.windowCreated)
+                handler: target(action: Application.windowCreated)
             ))
         } catch let error as ControllerObserverError {
             Loggers.Controller.application.info("\(error.localizedDescription)")
@@ -68,7 +68,7 @@ public actor Application<ObserverType: Observer>: Controller where ObserverType.
                 observer: observer,
                 element: element,
                 notification: .focusedWindowChanged,
-                handler: isolated(action: Application.focusedWindowChanged)
+                handler: target(action: Application.focusedWindowChanged)
             ))
         } catch let error as ControllerObserverError {
             Loggers.Controller.application.info("\(error.localizedDescription)")

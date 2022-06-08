@@ -24,7 +24,7 @@ public actor Button<ObserverType: Observer>: Controller where ObserverType.Obser
         do {
             observerTokens.append(try await add(
                 notification: .valueChanged,
-                handler: isolated(action: Button<ObserverType>.valueChanged)
+                handler: target(action: Button<ObserverType>.valueChanged)
             ))
         } catch let error as ControllerObserverError {
             Loggers.Controller.button.info("\(error.localizedDescription)")
