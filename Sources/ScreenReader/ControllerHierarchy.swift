@@ -15,13 +15,13 @@ actor ControllerHierarchy<ObserverType: AccessibilityElement.Observer> where Obs
     }
     private var controllers: [ElementType:ControllerContext] = [:]
     private let application: Application<ObserverType>
-    private let controllerFactory: (ElementType, ApplicationObserver<ObserverType>) async throws -> Controller
+    private let controllerFactory: Application<ObserverType>.ControllerFactory
     private let observer: ApplicationObserver<ObserverType>
     private var observerTokens: Set<ApplicationObserver<ObserverType>.ObserverToken> = .init()
     init(
         application: Application<ObserverType>,
         observer: ApplicationObserver<ObserverType>,
-        controllerFactory: @escaping (ElementType, ApplicationObserver<ObserverType>) async throws -> Controller
+        controllerFactory: @escaping Application<ObserverType>.ControllerFactory
     ) async throws {
         self.application = application
         self.observer = observer
@@ -51,6 +51,7 @@ actor ControllerHierarchy<ObserverType: AccessibilityElement.Observer> where Obs
     @discardableResult
     func controller(
         element: ElementType,
+        application: Application<ObserverType>,
         observer: ApplicationObserver<ObserverType>
     ) async throws -> Controller {
         if let context = controllers[element] {
@@ -70,6 +71,7 @@ actor ControllerHierarchy<ObserverType: AccessibilityElement.Observer> where Obs
         } catch {}
         let controller = try await controllerFactory(
             element,
+            application,
             observer
         )
         controllers[element] = .init(
