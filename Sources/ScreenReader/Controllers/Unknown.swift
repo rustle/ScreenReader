@@ -10,7 +10,7 @@ import os
 
 public actor Unknown<ObserverType: Observer>: Controller where ObserverType.ObserverElement: Hashable {
     public typealias ElementType = ObserverType.ObserverElement
-    private let element: ElementType
+    let element: ElementType
 
     private var logger: Logger {
         Loggers.Controller.unknown
@@ -18,7 +18,7 @@ public actor Unknown<ObserverType: Observer>: Controller where ObserverType.Obse
 
     private unowned let application: Application<ObserverType>
 
-    private let observer: ApplicationObserver<ObserverType>
+    let observer: ApplicationObserver<ObserverType>
     private var observerTokens: [ApplicationObserver<ObserverType>.ObserverToken] = []
 
 #if DEBUG
@@ -67,3 +67,5 @@ public actor Unknown<ObserverType: Observer>: Controller where ObserverType.Obse
         observerTokens.removeAll()
     }
 }
+
+extension Unknown: ObserverHosting {}
