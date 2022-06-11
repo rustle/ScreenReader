@@ -31,14 +31,14 @@ public actor List<ObserverType: Observer>: Controller where ObserverType.Observe
         self.observer = observer
     }
     public func start() async throws {
-        Loggers.Controller.list.info("\(#function) \(self.element)")
+        logger.info("\(#function) \(self.element)")
         do {
             observerTokens.append(try await add(
                 notification: .selectedChildrenChanged,
                 handler: target(action: List<ObserverType>.selectedChildrenChanged)
             ))
         } catch let error as ControllerObserverError {
-            Loggers.Controller.list.info("\(error.localizedDescription)")
+            logger.info("\(error.localizedDescription)")
         } catch {
             throw error
         }
@@ -53,7 +53,7 @@ public actor List<ObserverType: Observer>: Controller where ObserverType.Observe
                 try await observer.remove(token: observerToken)
             }
         } catch {
-            Loggers.Controller.list.error("\(error.localizedDescription)")
+            logger.error("\(error.localizedDescription)")
         }
         observerTokens.removeAll()
     }
@@ -61,12 +61,12 @@ public actor List<ObserverType: Observer>: Controller where ObserverType.Observe
         element: ElementType,
         userInfo: [String:Any]?
     ) async {
-        Loggers.Controller.list.info("\(#function) \(element)")
+        logger.info("\(#function) \(element)")
         do {
             let children = try element.selectedChildren()
-            Loggers.Controller.list.info("\(#function) \(children)")
+            logger.info("\(#function) \(children)")
         } catch {
-            Loggers.Controller.list.error("\(#function) \(error.localizedDescription)")
+            logger.error("\(#function) \(error.localizedDescription)")
         }
     }
 }

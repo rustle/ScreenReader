@@ -72,9 +72,9 @@ public actor Application<ObserverType: Observer>: Controller where ObserverType.
                 handler: target(action: Application.windowCreated)
             ))
         } catch let error as ControllerObserverError {
-            Loggers.Controller.application.info("\(error.localizedDescription)")
+            logger.info("\(error.localizedDescription)")
         } catch {
-            Loggers.Controller.application.error("\(error.localizedDescription)")
+            logger.error("\(error.localizedDescription)")
         }
         do {
             observerTokens.append(try await Self.add(
@@ -84,9 +84,9 @@ public actor Application<ObserverType: Observer>: Controller where ObserverType.
                 handler: target(action: Application.focusedWindowChanged)
             ))
         } catch let error as ControllerObserverError {
-            Loggers.Controller.application.info("\(error.localizedDescription)")
+            logger.info("\(error.localizedDescription)")
         } catch {
-            Loggers.Controller.application.error("\(error.localizedDescription)")
+            logger.error("\(error.localizedDescription)")
         }
         for window in try element.windows() {
             do {
@@ -96,7 +96,7 @@ public actor Application<ObserverType: Observer>: Controller where ObserverType.
                     observer: observer
                 )
             } catch {
-                Loggers.Controller.application.error("\(error.localizedDescription)")
+                logger.error("\(error.localizedDescription)")
             }
         }
         do {
@@ -105,7 +105,7 @@ public actor Application<ObserverType: Observer>: Controller where ObserverType.
                 userInfo: nil
             )
         } catch {
-            Loggers.Controller.application.error("\(error.localizedDescription)")
+            logger.error("\(error.localizedDescription)")
         }
     }
     public func stop() async throws {
@@ -117,7 +117,7 @@ public actor Application<ObserverType: Observer>: Controller where ObserverType.
         window: ElementType,
         userInfo: [String:Any]?
     ) async {
-        Loggers.Controller.application.info("\(#function):\(#line) \(window)")
+        logger.info("\(#function):\(#line) \(window)")
         do {
             guard let hierarchy = hierarchy else { return }
             guard let observer = observer else { return }
@@ -127,7 +127,7 @@ public actor Application<ObserverType: Observer>: Controller where ObserverType.
                 observer: observer
             )
         } catch {
-            Loggers.Controller.application.error("\(#function):\(#line) \(error.localizedDescription)")
+            logger.error("\(#function):\(#line) \(error.localizedDescription)")
         }
     }
     private func focusedWindowChanged(
@@ -144,7 +144,7 @@ public actor Application<ObserverType: Observer>: Controller where ObserverType.
             )
                 .focus()
         } catch {
-            Loggers.Controller.application.error("\(#function):\(#line) \(error.localizedDescription)")
+            logger.error("\(#function):\(#line) \(error.localizedDescription)")
         }
     }
     private func focusedUIElementChanged(
@@ -152,11 +152,11 @@ public actor Application<ObserverType: Observer>: Controller where ObserverType.
         userInfo: [String:Any]?
     ) async {
         guard let observer = observer else { return }
-        Loggers.Controller.application.info("\(#function) \(element.description)")
+        logger.info("\(#function) \(element.description)")
         do {
             try await focusedUIElement?.stop()
         } catch {
-            Loggers.Controller.application.error("\(error.localizedDescription)")
+            logger.error("\(error.localizedDescription)")
         }
         do {
             focusedUIElement = try await Self.controller(
@@ -165,13 +165,13 @@ public actor Application<ObserverType: Observer>: Controller where ObserverType.
                 observer: observer
             )
         } catch {
-            Loggers.Controller.application.error("\(error.localizedDescription)")
+            logger.error("\(error.localizedDescription)")
         }
         do {
             try await focusedUIElement?.start()
             try await focusedUIElement?.focus()
         } catch {
-            Loggers.Controller.application.error("\(error.localizedDescription)")
+            logger.error("\(error.localizedDescription)")
         }
     }
 }

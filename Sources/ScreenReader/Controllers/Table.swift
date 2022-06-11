@@ -32,14 +32,14 @@ public actor Table<ObserverType: Observer>: Controller where ObserverType.Observ
         self.observer = observer
     }
     public func start() async throws {
-        Loggers.Controller.table.info("\(#function) \(self.element)")
+        logger.info("\(#function) \(self.element)")
         do {
             observerTokens.append(try await add(
                 notification: .selectedRowsChanged,
                 handler: target(action: Table<ObserverType>.selectionChanged)
             ))
         } catch let error as ControllerObserverError {
-            Loggers.Controller.table.info("\(error.localizedDescription)")
+            logger.info("\(error.localizedDescription)")
         } catch {
             throw error
         }
@@ -49,7 +49,7 @@ public actor Table<ObserverType: Observer>: Controller where ObserverType.Observ
                 handler: target(action: Table<ObserverType>.selectionChanged)
             ))
         } catch let error as ControllerObserverError {
-            Loggers.Controller.table.info("\(error.localizedDescription)")
+            logger.info("\(error.localizedDescription)")
         } catch {
             throw error
         }
@@ -59,7 +59,7 @@ public actor Table<ObserverType: Observer>: Controller where ObserverType.Observ
         )
     }
     public func focus() async throws {
-        Loggers.Controller.table.info("\(#function) \(self.element)")
+        logger.info("\(#function) \(self.element)")
     }
     public func stop() async throws {
         do {
@@ -73,12 +73,12 @@ public actor Table<ObserverType: Observer>: Controller where ObserverType.Observ
         element: ElementType,
         userInfo: [String:Any]?
     ) async {
-        Loggers.Controller.table.info("\(#function) \(element)")
+        logger.info("\(#function) \(element)")
         do {
             let cells = try element.selectedCells()
-            Loggers.Controller.table.info("\(#function) \(cells)")
+            logger.info("\(#function) \(cells)")
         } catch {
-            Loggers.Controller.table.error("\(#function) \(error.localizedDescription)")
+            logger.error("\(#function) \(error.localizedDescription)")
         }
     }
 }

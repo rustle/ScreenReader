@@ -31,26 +31,26 @@ public actor WebArea<ObserverType: Observer>: Controller where ObserverType.Obse
         self.observer = observer
     }
     public func start() async throws {
-        Loggers.Controller.webArea.info("\(#function) \(self.element)")
+        logger.info("\(#function) \(self.element)")
         do {
             observerTokens.append(try await add(
                 notification: .selectedTextChanged,
                 handler: target(action: WebArea<ObserverType>.selectedTextChanged)
             ))
         } catch let error as ControllerObserverError {
-            Loggers.Controller.webArea.info("\(error.localizedDescription)")
+            logger.info("\(error.localizedDescription)")
         } catch {
             throw error
         }
     }
     public func stop() async throws {
-        Loggers.Controller.webArea.info("\(#function) \(self.element)")
+        logger.info("\(#function) \(self.element)")
         do {
             for observerToken in observerTokens {
                 try await observer.remove(token: observerToken)
             }
         } catch {
-            Loggers.Controller.webArea.error("\(error.localizedDescription)")
+            logger.error("\(error.localizedDescription)")
         }
         observerTokens.removeAll()
     }
@@ -58,7 +58,7 @@ public actor WebArea<ObserverType: Observer>: Controller where ObserverType.Obse
         element: ElementType,
         userInfo: [String:Any]?
     ) async {
-        Loggers.Controller.webArea.info("\(#function) \(element) \(String(describing: userInfo))")
+        logger.info("\(#function) \(element) \(String(describing: userInfo))")
     }
 }
 

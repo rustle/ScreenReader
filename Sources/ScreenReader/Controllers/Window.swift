@@ -31,16 +31,16 @@ public actor Window<ObserverType: Observer>: Controller where ObserverType.Obser
         self.observer = observer
     }
     public func start() async throws {
-        Loggers.Controller.window.info("\(#function) \(self.element)")
+        logger.info("\(#function) \(self.element)")
     }
     public func stop() async throws {
-        Loggers.Controller.window.info("\(#function) \(self.element)")
+        logger.info("\(#function) \(self.element)")
         do {
             for observerToken in observerTokens {
                 try await observer.remove(token: observerToken)
             }
         } catch {
-            Loggers.Controller.window.error("\(error.localizedDescription)")
+            logger.error("\(error.localizedDescription)")
         }
         observerTokens.removeAll()
     }

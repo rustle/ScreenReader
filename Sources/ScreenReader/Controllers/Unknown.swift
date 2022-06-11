@@ -35,7 +35,7 @@ public actor Unknown<ObserverType: Observer>: Controller where ObserverType.Obse
         self.observer = observer
     }
     public func start() async throws {
-        Loggers.Controller.unknown.info("\(#function) \(self.element)")
+        logger.info("\(#function) \(self.element)")
 #if DEBUG
         if let element = element as? SystemElement {
             cachedDebugInfo = element.debugInfo
@@ -45,24 +45,24 @@ public actor Unknown<ObserverType: Observer>: Controller where ObserverType.Obse
 #endif // DEBUG
     }
     public func focus() async throws {
-        Loggers.Controller.unknown.info("\(#function) \(self.element)")
+        logger.info("\(#function) \(self.element)")
     }
     public func stop() async throws {
 #if DEBUG
         if let cachedDebugInfo = cachedDebugInfo {
-            Loggers.Controller.unknown.info("\(#function) \(self.element) \(cachedDebugInfo)")
+            logger.info("\(#function) \(self.element) \(cachedDebugInfo)")
         } else {
-            Loggers.Controller.unknown.info("\(#function) \(self.element)")
+            logger.info("\(#function) \(self.element)")
         }
 #else
-        Loggers.Controller.unknown.info("\(#function) \(self.element)")
+        logger.info("\(#function) \(self.element)")
 #endif // DEBUG
         do {
             for observerToken in observerTokens {
                 try await observer.remove(token: observerToken)
             }
         } catch {
-            Loggers.Controller.unknown.error("\(error.localizedDescription)")
+            logger.error("\(error.localizedDescription)")
         }
         observerTokens.removeAll()
     }
