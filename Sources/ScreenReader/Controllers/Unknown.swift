@@ -11,12 +11,20 @@ import os
 public actor Unknown<ObserverType: Observer>: Controller where ObserverType.ObserverElement: Hashable {
     public typealias ElementType = ObserverType.ObserverElement
     private let element: ElementType
+
+    private var logger: Logger {
+        Loggers.Controller.unknown
+    }
+
     private unowned let application: Application<ObserverType>
+
     private let observer: ApplicationObserver<ObserverType>
     private var observerTokens: [ApplicationObserver<ObserverType>.ObserverToken] = []
+
 #if DEBUG
     private var cachedDebugInfo: [String:Any]?
 #endif // DEBUG
+
     public init(
         element: ElementType,
         application: Application<ObserverType>,

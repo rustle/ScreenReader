@@ -12,9 +12,16 @@ import os
 public actor Table<ObserverType: Observer>: Controller where ObserverType.ObserverElement: Hashable {
     public typealias ElementType = ObserverType.ObserverElement
     public let element: ElementType
+
+    private var logger: Logger {
+        Loggers.Controller.table
+    }
+
     private unowned let application: Application<ObserverType>
+
     let observer: ApplicationObserver<ObserverType>
     private var observerTokens: [ApplicationObserver<ObserverType>.ObserverToken] = []
+
     public init(
         element: ElementType,
         application: Application<ObserverType>,

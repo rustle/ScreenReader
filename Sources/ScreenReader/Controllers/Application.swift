@@ -6,6 +6,7 @@
 
 import AccessibilityElement
 import Cocoa
+import os
 
 public enum ApplicationError: Error {
     case observerError(ObserverError)
@@ -19,9 +20,15 @@ public actor Application<ObserverType: Observer>: Controller where ObserverType.
         ApplicationObserver<ObserverType>
     ) async throws -> Controller
 
+    private var logger: Logger {
+        Loggers.Controller.application
+    }
+
     public let element: ElementType
+
     private var observer: ApplicationObserver<ObserverType>?
     private var observerTokens: [ApplicationObserver<ObserverType>.ObserverToken] = []
+
     private var focusedUIElement: Controller?
     private let output: Output
     private var observerFactory: () async throws -> ApplicationObserver<ObserverType>
