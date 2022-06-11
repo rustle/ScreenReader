@@ -22,6 +22,7 @@ enum ControllerObserverError: Error {
     case notificationUnsupported
     case invalidUIElement
     case cannotComplete
+    case multiple([Error])
 }
 
 extension Controller {

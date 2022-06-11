@@ -58,9 +58,7 @@ public actor Unknown<ObserverType: Observer>: Controller where ObserverType.Obse
         logger.info("\(#function) \(self.element)")
 #endif // DEBUG
         do {
-            for observerToken in observerTokens {
-                try await observer.remove(token: observerToken)
-            }
+            try await remove(tokens: observerTokens)
         } catch {
             logger.error("\(error.localizedDescription)")
         }

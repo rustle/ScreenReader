@@ -46,9 +46,7 @@ public actor WebArea<ObserverType: Observer>: Controller where ObserverType.Obse
     public func stop() async throws {
         logger.info("\(#function) \(self.element)")
         do {
-            for observerToken in observerTokens {
-                try await observer.remove(token: observerToken)
-            }
+            try await remove(tokens: observerTokens)
         } catch {
             logger.error("\(error.localizedDescription)")
         }

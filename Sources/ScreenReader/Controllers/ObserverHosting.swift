@@ -21,13 +21,26 @@ protocol ObserverHosting: Controller {
 extension ObserverHosting {
     func add(
         notification: NSAccessibility.Notification,
-        handler: @escaping (ObserverType.ObserverElement, [String:Any]?) async -> Void
+        handler: @escaping (ElementType, [String:Any]?) async -> Void
     ) async throws -> ApplicationObserver<ObserverType>.ApplicationObserverToken {
-        return try await Self.add(
+        try await Self.add(
             observer: observer,
             element: element,
             notification: notification,
             handler: handler
         )
+    }
+    func remove(tokens: [ApplicationObserver<ObserverType>.ApplicationObserverToken]) async throws {
+        var errors = [Error]()
+        for observerToken in tokens {
+            do {
+                try await observer.remove(token: observerToken)
+            } catch {
+                errors.append(error)
+            }
+        }
+        guard errors.isEmpty else {
+            throw ControllerObserverError.multiple(errors)
+        }
     }
 }

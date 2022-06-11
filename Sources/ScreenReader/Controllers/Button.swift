@@ -48,9 +48,7 @@ public actor Button<ObserverType: Observer>: Controller where ObserverType.Obser
     }
     public func stop() async throws {
         do {
-            for observerToken in observerTokens {
-                try await observer.remove(token: observerToken)
-            }
+            try await remove(tokens: observerTokens)
         } catch {
             logger.error("\(error.localizedDescription)")
         }

@@ -38,9 +38,7 @@ public actor ComboBox<ObserverType: Observer>: Controller where ObserverType.Obs
     }
     public func stop() async throws {
         do {
-            for observerToken in observerTokens {
-                try await observer.remove(token: observerToken)
-            }
+            try await remove(tokens: observerTokens)
         } catch {
             logger.error("\(error.localizedDescription)")
         }

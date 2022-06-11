@@ -36,9 +36,7 @@ public actor Window<ObserverType: Observer>: Controller where ObserverType.Obser
     public func stop() async throws {
         logger.info("\(#function) \(self.element)")
         do {
-            for observerToken in observerTokens {
-                try await observer.remove(token: observerToken)
-            }
+            try await remove(tokens: observerTokens)
         } catch {
             logger.error("\(error.localizedDescription)")
         }
