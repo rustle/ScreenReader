@@ -8,7 +8,7 @@ import AccessibilityElement
 import Cocoa
 import os
 
-public actor SystemWide: Controller {
+public final class SystemWide: Controller {
     private let element: SystemElement
     public init() async throws {
         self.element = try SystemElement.systemWide()

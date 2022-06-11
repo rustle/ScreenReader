@@ -6,9 +6,10 @@
 
 import AccessibilityElement
 import Foundation
+import TargetAction
 import os
 
-public actor List<ObserverType: Observer>: Controller where ObserverType.ObserverElement: Hashable {
+public final class List<ObserverType: Observer>: Controller where ObserverType.ObserverElement: Hashable {
     public typealias ElementType = ObserverType.ObserverElement
     public let element: ElementType
 
@@ -35,7 +36,10 @@ public actor List<ObserverType: Observer>: Controller where ObserverType.Observe
         do {
             observerTokens.append(try await add(
                 notification: .selectedChildrenChanged,
-                handler: target(action: List<ObserverType>.selectedChildrenChanged)
+                handler: TargetAction.target(
+                    self,
+                    action: List<ObserverType>.selectedChildrenChanged
+                )
             ))
         } catch let error as ControllerObserverError {
             logger.info("\(error.localizedDescription)")

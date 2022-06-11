@@ -6,9 +6,10 @@
 
 import AccessibilityElement
 import Foundation
+import TargetAction
 import os
 
-public actor TextArea<ObserverType: Observer>: Controller where ObserverType.ObserverElement: Hashable {
+public final class TextArea<ObserverType: Observer>: Controller where ObserverType.ObserverElement: Hashable {
     public typealias ElementType = ObserverType.ObserverElement
     public let element: ElementType
 
@@ -35,7 +36,10 @@ public actor TextArea<ObserverType: Observer>: Controller where ObserverType.Obs
         do {
             observerTokens.append(try await add(
                 notification: .valueChanged,
-                handler: target(action: TextArea<ObserverType>.valueChanged)
+                handler: TargetAction.target(
+                    self,
+                    action: TextArea<ObserverType>.valueChanged
+                )
             ))
         } catch let error as ControllerObserverError {
             logger.info("\(error.localizedDescription)")
@@ -45,7 +49,10 @@ public actor TextArea<ObserverType: Observer>: Controller where ObserverType.Obs
         do {
             observerTokens.append(try await add(
                 notification: .selectedTextChanged,
-                handler: target(action: TextArea<ObserverType>.selectedTextChanged)
+                handler: TargetAction.target(
+                    self,
+                    action: TextArea<ObserverType>.selectedTextChanged
+                )
             ))
         } catch let error as ControllerObserverError {
             logger.info("\(error.localizedDescription)")

@@ -7,7 +7,7 @@
 import AccessibilityElement
 import Cocoa
 
-public protocol Controller: Actor {
+public protocol Controller {
     func start() async throws
     func stop() async throws
     func focus() async throws

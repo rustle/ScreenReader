@@ -7,8 +7,9 @@
 import AccessibilityElement
 import Foundation
 import os
+import TargetAction
 
-public actor WebArea<ObserverType: Observer>: Controller where ObserverType.ObserverElement: Hashable {
+public final class WebArea<ObserverType: Observer>: Controller where ObserverType.ObserverElement: Hashable {
     public typealias ElementType = ObserverType.ObserverElement
     public let element: ElementType
 
@@ -35,7 +36,10 @@ public actor WebArea<ObserverType: Observer>: Controller where ObserverType.Obse
         do {
             observerTokens.append(try await add(
                 notification: .selectedTextChanged,
-                handler: target(action: WebArea<ObserverType>.selectedTextChanged)
+                handler: TargetAction.target(
+                    self,
+                    action: WebArea<ObserverType>.selectedTextChanged
+                )
             ))
         } catch let error as ControllerObserverError {
             logger.info("\(error.localizedDescription)")

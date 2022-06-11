@@ -8,7 +8,7 @@ import AccessibilityElement
 import Foundation
 import os
 
-public actor Unknown<ObserverType: Observer>: Controller where ObserverType.ObserverElement: Hashable {
+public final class Unknown<ObserverType: Observer>: Controller where ObserverType.ObserverElement: Hashable {
     public typealias ElementType = ObserverType.ObserverElement
     let element: ElementType
 

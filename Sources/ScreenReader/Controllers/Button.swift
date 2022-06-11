@@ -7,8 +7,9 @@
 import AccessibilityElement
 import Foundation
 import os
+import TargetAction
 
-public actor Button<ObserverType: Observer>: Controller where ObserverType.ObserverElement: Hashable {
+public final class Button<ObserverType: Observer>: Controller where ObserverType.ObserverElement: Hashable {
     public typealias ElementType = ObserverType.ObserverElement
     public let element: ElementType
 
@@ -35,7 +36,10 @@ public actor Button<ObserverType: Observer>: Controller where ObserverType.Obser
         do {
             observerTokens.append(try await add(
                 notification: .valueChanged,
-                handler: target(action: Button<ObserverType>.valueChanged)
+                handler: TargetAction.target(
+                    self,
+                    action: Button<ObserverType>.valueChanged
+                )
             ))
         } catch let error as ControllerObserverError {
             logger.info("\(error.localizedDescription)")

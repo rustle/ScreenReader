@@ -9,7 +9,7 @@ import Foundation
 import TargetAction
 import os
 
-public actor Table<ObserverType: Observer>: Controller where ObserverType.ObserverElement: Hashable {
+public final class Table<ObserverType: Observer>: Controller where ObserverType.ObserverElement: Hashable {
     public typealias ElementType = ObserverType.ObserverElement
     public let element: ElementType
 
@@ -36,7 +36,10 @@ public actor Table<ObserverType: Observer>: Controller where ObserverType.Observ
         do {
             observerTokens.append(try await add(
                 notification: .selectedRowsChanged,
-                handler: target(action: Table<ObserverType>.selectionChanged)
+                handler: TargetAction.target(
+                    self,
+                    action: Table<ObserverType>.selectionChanged
+                )
             ))
         } catch let error as ControllerObserverError {
             logger.info("\(error.localizedDescription)")
@@ -46,7 +49,10 @@ public actor Table<ObserverType: Observer>: Controller where ObserverType.Observ
         do {
             observerTokens.append(try await add(
                 notification: .selectedColumnsChanged,
-                handler: target(action: Table<ObserverType>.selectionChanged)
+                handler: TargetAction.target(
+                    self,
+                    action: Table<ObserverType>.selectionChanged
+                )
             ))
         } catch let error as ControllerObserverError {
             logger.info("\(error.localizedDescription)")
