@@ -12,8 +12,6 @@ public final class Window<ObserverType: Observer>: Controller where ObserverType
     public typealias ElementType = ObserverType.ObserverElement
     public let element: ElementType
 
-    private unowned let application: Application<ObserverType>
-
     let observer: ApplicationObserver<ObserverType>
     private var observerTokens: [ApplicationObserver<ObserverType>.ObserverToken] = []
 
@@ -23,11 +21,9 @@ public final class Window<ObserverType: Observer>: Controller where ObserverType
 
     public init(
         element: ElementType,
-        application: Application<ObserverType>,
         observer: ApplicationObserver<ObserverType>
     ) async throws {
         self.element = element
-        self.application = application
         self.observer = observer
     }
     public func start() async throws {

@@ -14,9 +14,9 @@ public enum ApplicationError: Error {
 
 public actor Application<ObserverType: Observer>: Controller where ObserverType.ObserverElement: Hashable {
     public typealias ElementType = ObserverType.ObserverElement
+
     public typealias ControllerFactory = (
         ElementType,
-        Application<ObserverType>,
         ApplicationObserver<ObserverType>
     ) async throws -> Controller
 
@@ -39,7 +39,7 @@ public actor Application<ObserverType: Observer>: Controller where ObserverType.
         element: ElementType,
         output: Output,
         observerFactory: @escaping () async throws -> ApplicationObserver<ObserverType>,
-        controllerFactory: @escaping ControllerFactory
+        controllerFactory: @escaping (ElementType, ApplicationObserver<ObserverType>) async throws -> Controller
     ) async throws {
         self.element = element
         self.output = output
@@ -92,7 +92,6 @@ public actor Application<ObserverType: Observer>: Controller where ObserverType.
             do {
                 try await hierarchy.controller(
                     element: window,
-                    application: self,
                     observer: observer
                 )
             } catch {
@@ -123,7 +122,6 @@ public actor Application<ObserverType: Observer>: Controller where ObserverType.
             guard let observer = observer else { return }
             try await hierarchy.controller(
                 element: window,
-                application: self,
                 observer: observer
             )
         } catch {
@@ -139,7 +137,6 @@ public actor Application<ObserverType: Observer>: Controller where ObserverType.
         do {
             try await Self.controller(
                 element: try element.focusedWindow(),
-                application: self,
                 observer: observer
             )
                 .focus()
@@ -161,7 +158,6 @@ public actor Application<ObserverType: Observer>: Controller where ObserverType.
         do {
             focusedUIElement = try await Self.controller(
                 element: element,
-                application: self,
                 observer: observer
             )
         } catch {
@@ -179,7 +175,6 @@ public actor Application<ObserverType: Observer>: Controller where ObserverType.
 extension Application {
     public static func controller(
         element: ElementType,
-        application: Application<ObserverType>,
         observer: ApplicationObserver<ObserverType>
     ) async throws -> Controller {
         let role = try element.role()
@@ -187,49 +182,41 @@ extension Application {
         case .button:
             return try await Button(
                 element: element,
-                application: application,
                 observer: observer
             )
         case .comboBox:
             return try await ComboBox(
                 element: element,
-                application: application,
                 observer: observer
             )
         case .list:
             return try await List(
                 element: element,
-                application: application,
                 observer: observer
             )
         case .table:
             return try await Table(
                 element: element,
-                application: application,
                 observer: observer
             )
         case .textArea:
             return try await TextArea(
                 element: element,
-                application: application,
                 observer: observer
             )
         case .webArea:
             return try await WebArea(
                 element: element,
-                application: application,
                 observer: observer
             )
         case .window:
             return try await Window(
                 element: element,
-                application: application,
                 observer: observer
             )
         default:
             return try await Unknown(
                 element: element,
-                application: application,
                 observer: observer
             )
         }
@@ -245,7 +232,7 @@ extension Application where ObserverType == SystemObserver {
             element: try .application(processIdentifier: processIdentifier),
             output: output,
             observerFactory: { .init(observer: try .init(processIdentifier: processIdentifier)) },
-            controllerFactory: Application.controller(element:application:observer:)
+            controllerFactory: Application.controller(element:observer:)
         )
     }
 }
