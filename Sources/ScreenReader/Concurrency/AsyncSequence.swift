@@ -10,7 +10,7 @@ extension AsyncSequence {
         detached: Bool = false,
         priority: TaskPriority? = nil,
         action: @escaping @Sendable (T) -> (Element) async -> Void
-    ) -> Task<Void, Error> where T: Sendable {
+    ) -> Task<Void, any Error> where T: Sendable {
         let operation: @Sendable () async throws -> Void = { [weak target] in
             for try await value in self {
                 try Task.checkCancellation()
@@ -37,7 +37,7 @@ extension AsyncSequence {
         detached: Bool = false,
         priority: TaskPriority? = nil,
         action: @escaping (isolated T) -> (Element) async -> Void
-    ) -> Task<Void, Error> {
+    ) -> Task<Void, any Error> {
         let operation: @Sendable () async throws -> Void = { [weak target] in
             for try await value in self {
                 try Task.checkCancellation()
@@ -63,7 +63,7 @@ extension AsyncSequence {
         detached: Bool = false,
         priority: TaskPriority? = nil,
         receiveValue: @escaping @Sendable (Element) async -> Void
-    ) -> Task<Void, Error> {
+    ) -> Task<Void, any Error> {
         let operation: @Sendable () async throws -> Void = {
             for try await value in self {
                 try Task.checkCancellation()
