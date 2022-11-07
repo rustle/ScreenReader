@@ -45,7 +45,7 @@ public actor Server {
 }
 
 extension Server {
-    public convenience init(
+    public init(
         processIdentifier: pid_t,
         bundleIdentifier: BundleIdentifier,
         output: Output
