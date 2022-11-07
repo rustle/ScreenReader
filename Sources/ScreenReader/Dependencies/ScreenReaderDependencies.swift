@@ -8,10 +8,6 @@ import Foundation
 @preconcurrency import os
 
 public struct ScreenReaderDependencies: Sendable {
-    public let logger = Logger(
-        subsystem: "ScreenReader",
-        category: "ScreenReader"
-    )
     public let isTrusted: @Sendable (Bool) -> Bool
     public let runningApplicationsFactory: @Sendable () async throws -> RunningApplications
     public init(
