@@ -15,14 +15,14 @@ protocol ObserverHosting: Controller {
     func add(
         notification: NSAccessibility.Notification,
         handler: @escaping (ElementType, [String:Any]?) async -> Void
-    ) async throws -> ApplicationObserver<ObserverType>.ApplicationObserverToken
+    ) async throws -> Task<Void, any Error>
 }
 
 extension ObserverHosting {
     func add(
         notification: NSAccessibility.Notification,
         handler: @escaping (ElementType, [String:Any]?) async -> Void
-    ) async throws -> ApplicationObserver<ObserverType>.ApplicationObserverToken {
+    ) async throws -> Task<Void, any Error> {
         try await Self.add(
             observer: observer,
             element: element,
@@ -30,17 +30,14 @@ extension ObserverHosting {
             handler: handler
         )
     }
-    func remove(tokens: [ApplicationObserver<ObserverType>.ApplicationObserverToken]) async throws {
-        var errors = [Error]()
-        for observerToken in tokens {
-            do {
-                try await observer.remove(token: observerToken)
-            } catch {
-                errors.append(error)
-            }
-        }
-        guard errors.isEmpty else {
-            throw ControllerObserverError.multiple(errors)
+}
+
+extension Array where Element == Task<Void, any Error> {
+    mutating func cancel() {
+        let tasks = self
+        self.removeAll()
+        for task in tasks {
+            task.cancel()
         }
     }
 }

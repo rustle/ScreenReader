@@ -17,7 +17,7 @@ public final class ComboBox<ObserverType: Observer>: Controller where ObserverTy
     }
 
     let observer: ApplicationObserver<ObserverType>
-    private var observerTokens: [ApplicationObserver<ObserverType>.ObserverToken] = []
+    private var observerTasks: [Task<Void, any Error>] = []
 
     public init(
         element: ElementType,
@@ -33,12 +33,7 @@ public final class ComboBox<ObserverType: Observer>: Controller where ObserverTy
         logger.info("\(#function) \(self.element)")
     }
     public func stop() async throws {
-        do {
-            try await remove(tokens: observerTokens)
-        } catch {
-            logger.error("\(error.localizedDescription)")
-        }
-        observerTokens.removeAll()
+        observerTasks.cancel()
     }
 }
 

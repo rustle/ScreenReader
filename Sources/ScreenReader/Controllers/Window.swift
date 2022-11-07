@@ -13,7 +13,7 @@ public final class Window<ObserverType: Observer>: Controller where ObserverType
     public let element: ElementType
 
     let observer: ApplicationObserver<ObserverType>
-    private var observerTokens: [ApplicationObserver<ObserverType>.ObserverToken] = []
+    private var observerTasks: [Task<Void, any Error>] = []
 
     private var logger: Logger {
         Loggers.Controller.window
@@ -31,12 +31,7 @@ public final class Window<ObserverType: Observer>: Controller where ObserverType
     }
     public func stop() async throws {
         logger.info("\(#function) \(self.element)")
-        do {
-            try await remove(tokens: observerTokens)
-        } catch {
-            logger.error("\(error.localizedDescription)")
-        }
-        observerTokens.removeAll()
+        observerTasks.cancel()
     }
 }
 

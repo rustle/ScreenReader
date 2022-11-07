@@ -18,7 +18,7 @@ public final class List<ObserverType: Observer>: Controller where ObserverType.O
     }
 
     let observer: ApplicationObserver<ObserverType>
-    private var observerTokens: [ApplicationObserver<ObserverType>.ObserverToken] = []
+    private var observerTasks: [Task<Void, any Error>] = []
 
     public init(
         element: ElementType,
@@ -30,7 +30,7 @@ public final class List<ObserverType: Observer>: Controller where ObserverType.O
     public func start() async throws {
         logger.info("\(#function) \(self.element)")
         do {
-            observerTokens.append(try await add(
+            observerTasks.append(try await add(
                 notification: .selectedChildrenChanged,
                 handler: TargetAction.target(
                     self,
@@ -48,12 +48,7 @@ public final class List<ObserverType: Observer>: Controller where ObserverType.O
         )
     }
     public func stop() async throws {
-        do {
-            try await remove(tokens: observerTokens)
-        } catch {
-            logger.error("\(error.localizedDescription)")
-        }
-        observerTokens.removeAll()
+        observerTasks.cancel()
     }
     private func selectedChildrenChanged(
         element: ElementType,

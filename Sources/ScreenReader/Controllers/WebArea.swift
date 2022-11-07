@@ -18,7 +18,7 @@ public final class WebArea<ObserverType: Observer>: Controller where ObserverTyp
     }
 
     let observer: ApplicationObserver<ObserverType>
-    private var observerTokens: [ApplicationObserver<ObserverType>.ObserverToken] = []
+    private var observerTasks: [Task<Void, any Error>] = []
 
     public init(
         element: ElementType,
@@ -30,7 +30,7 @@ public final class WebArea<ObserverType: Observer>: Controller where ObserverTyp
     public func start() async throws {
         logger.info("\(#function) \(self.element)")
         do {
-            observerTokens.append(try await add(
+            observerTasks.append(try await add(
                 notification: .selectedTextChanged,
                 handler: TargetAction.target(
                     self,
@@ -45,12 +45,7 @@ public final class WebArea<ObserverType: Observer>: Controller where ObserverTyp
     }
     public func stop() async throws {
         logger.info("\(#function) \(self.element)")
-        do {
-            try await remove(tokens: observerTokens)
-        } catch {
-            logger.error("\(error.localizedDescription)")
-        }
-        observerTokens.removeAll()
+        observerTasks.cancel()
     }
     private func selectedTextChanged(
         element: ElementType,

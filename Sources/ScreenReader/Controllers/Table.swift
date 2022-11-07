@@ -5,7 +5,7 @@
 //
 
 import AccessibilityElement
-import Foundation
+import Cocoa
 import TargetAction
 import os
 
@@ -18,7 +18,7 @@ public final class Table<ObserverType: Observer>: Controller where ObserverType.
     }
 
     let observer: ApplicationObserver<ObserverType>
-    private var observerTokens: [ApplicationObserver<ObserverType>.ObserverToken] = []
+    private var observerTasks: [Task<Void, any Error>] = []
 
     public init(
         element: ElementType,
@@ -29,47 +29,45 @@ public final class Table<ObserverType: Observer>: Controller where ObserverType.
     }
     public func start() async throws {
         logger.info("\(#function) \(self.element)")
-        do {
-            observerTokens.append(try await add(
-                notification: .selectedRowsChanged,
-                handler: TargetAction.target(
-                    self,
-                    action: Table<ObserverType>.selectionChanged
-                )
-            ))
-        } catch let error as ControllerObserverError {
-            logger.info("\(error.localizedDescription)")
-        } catch {
-            throw error
-        }
-        do {
-            observerTokens.append(try await add(
-                notification: .selectedColumnsChanged,
-                handler: TargetAction.target(
-                    self,
-                    action: Table<ObserverType>.selectionChanged
-                )
-            ))
-        } catch let error as ControllerObserverError {
-            logger.info("\(error.localizedDescription)")
-        } catch {
-            throw error
-        }
+        try await _add(
+            notification: .selectedRowsChanged,
+            handler: TargetAction.target(
+                self,
+                action: Table<ObserverType>.selectionChanged
+            )
+        )
+        try await _add(
+            notification: .selectedColumnsChanged,
+            handler: TargetAction.target(
+                self,
+                action: Table<ObserverType>.selectionChanged
+            )
+        )
         await selectionChanged(
             element: element,
             userInfo: nil
         )
     }
+    private func _add(
+        notification: NSAccessibility.Notification,
+        handler: @escaping (ObserverType.ObserverElement, [String : Any]?) async -> Void
+    ) async throws {
+        do {
+            observerTasks.append(try await add(
+                notification: notification,
+                handler: handler
+            ))
+        } catch let error as ControllerObserverError {
+            logger.info("\(error.localizedDescription)")
+        } catch {
+            throw error
+        }
+    }
     public func focus() async throws {
         logger.info("\(#function) \(self.element)")
     }
     public func stop() async throws {
-        do {
-            try await remove(tokens: observerTokens)
-        } catch {
-            logger.error("\(error.localizedDescription)")
-        }
-        observerTokens.removeAll()
+        observerTasks.cancel()
     }
     private func selectionChanged(
         element: ElementType,

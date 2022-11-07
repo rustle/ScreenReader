@@ -17,7 +17,7 @@ public final class Unknown<ObserverType: Observer>: Controller where ObserverTyp
     }
 
     let observer: ApplicationObserver<ObserverType>
-    private var observerTokens: [ApplicationObserver<ObserverType>.ObserverToken] = []
+    private var observerTasks: [Task<Void, any Error>] = []
 
 #if DEBUG
     private var cachedDebugInfo: [String:Any]?
@@ -53,12 +53,7 @@ public final class Unknown<ObserverType: Observer>: Controller where ObserverTyp
 #else
         logger.info("\(#function) \(self.element)")
 #endif // DEBUG
-        do {
-            try await remove(tokens: observerTokens)
-        } catch {
-            logger.error("\(error.localizedDescription)")
-        }
-        observerTokens.removeAll()
+        observerTasks.cancel()
     }
 }
 

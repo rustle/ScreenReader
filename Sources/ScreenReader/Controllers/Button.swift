@@ -18,7 +18,7 @@ public final class Button<ObserverType: Observer>: Controller where ObserverType
     }
 
     let observer: ApplicationObserver<ObserverType>
-    private var observerTokens: [ApplicationObserver<ObserverType>.ObserverToken] = []
+    private var observerTasks: [Task<Void, any Error>] = []
 
     public init(
         element: ElementType,
@@ -30,7 +30,7 @@ public final class Button<ObserverType: Observer>: Controller where ObserverType
     public func start() async throws {
         logger.info("\(#function) \(self.element)")
         do {
-            observerTokens.append(try await add(
+            observerTasks.append(try await add(
                 notification: .valueChanged,
                 handler: TargetAction.target(
                     self,
@@ -47,12 +47,7 @@ public final class Button<ObserverType: Observer>: Controller where ObserverType
         logger.info("\(#function) \(self.element)")
     }
     public func stop() async throws {
-        do {
-            try await remove(tokens: observerTokens)
-        } catch {
-            logger.error("\(error.localizedDescription)")
-        }
-        observerTokens.removeAll()
+        observerTasks.cancel()
     }
     private func valueChanged(
         element: ElementType,

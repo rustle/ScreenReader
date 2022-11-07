@@ -27,7 +27,7 @@ public actor Application<ObserverType: Observer>: Controller where ObserverType.
     public let element: ElementType
 
     private var observer: ApplicationObserver<ObserverType>?
-    private var observerTokens: [ApplicationObserver<ObserverType>.ObserverToken] = []
+    private var observerTasks: [Task<Void, any Error>] = []
 
     private var focusedUIElement: Controller?
     private let output: Output
@@ -65,7 +65,7 @@ public actor Application<ObserverType: Observer>: Controller where ObserverType.
         self.observer = observer
         self.hierarchy = hierarchy
         do {
-            observerTokens.append(try await Self.add(
+            observerTasks.append(try await Self.add(
                 observer: observer,
                 element: element,
                 notification: .windowCreated,
@@ -77,14 +77,19 @@ public actor Application<ObserverType: Observer>: Controller where ObserverType.
             logger.error("\(error.localizedDescription)")
         }
         do {
-            observerTokens.append(try await Self.add(
+            observerTasks.append(try await Self.add(
                 observer: observer,
                 element: element,
                 notification: .focusedWindowChanged,
                 handler: target(action: Application.focusedWindowChanged)
             ))
         } catch let error as ControllerObserverError {
-            logger.info("\(error.localizedDescription)")
+            switch error {
+            case .notificationUnsupported:
+                break;
+            default:
+                logger.info("\(error.localizedDescription)")
+            }
         } catch {
             logger.error("\(error.localizedDescription)")
         }
@@ -111,6 +116,7 @@ public actor Application<ObserverType: Observer>: Controller where ObserverType.
         guard let observer = observer else { return }
         try await observer.stop()
         self.observer = nil
+        observerTasks.cancel()
     }
     private func windowCreated(
         window: ElementType,
@@ -133,16 +139,16 @@ public actor Application<ObserverType: Observer>: Controller where ObserverType.
         userInfo: [String:Any]?
     ) async {
         Loggers.Controller.application.info("\(#function):\(#line) \(element)")
-        guard let observer = observer else { return }
-        do {
-            try await Self.controller(
-                element: try element.focusedWindow(),
-                observer: observer
-            )
-                .focus()
-        } catch {
-            logger.error("\(#function):\(#line) \(error.localizedDescription)")
-        }
+//        guard let observer = observer else { return }
+//        do {
+//            try await Self.controller(
+//                element: try element.focusedWindow(),
+//                observer: observer
+//            )
+//                .focus()
+//        } catch {
+//            logger.error("\(#function):\(#line) \(error.localizedDescription)")
+//        }
     }
     private func focusedUIElementChanged(
         element: ElementType,
@@ -224,7 +230,7 @@ extension Application {
 }
 
 extension Application where ObserverType == SystemObserver {
-    public convenience init(
+    public init(
         processIdentifier: pid_t,
         output: Output
     ) async throws {
