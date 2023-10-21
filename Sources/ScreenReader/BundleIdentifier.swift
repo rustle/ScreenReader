@@ -4,20 +4,23 @@
 //  Copyright © 2017-2022 Doug Russell. All rights reserved.
 //
 
-public struct BundleIdentifier: RawRepresentable, CustomStringConvertible {
+public struct BundleIdentifier: Sendable, RawRepresentable, CustomStringConvertible {
     public typealias RawValue = String
     public let rawValue: String
-    public let description: String
+    public var description: String {
+        rawValue
+    }
     public init?(rawValue: String) {
         self.rawValue = rawValue.lowercased()
-        self.description = rawValue
     }
     public init?(rawValue: String?) {
         guard let rawValue = rawValue else {
             return nil
         }
         self.rawValue = rawValue.lowercased()
-        self.description = rawValue
+    }
+    public init(_ bundleIdentifier: String) {
+        self.rawValue = bundleIdentifier.lowercased()
     }
 }
 

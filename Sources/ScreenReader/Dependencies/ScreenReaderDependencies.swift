@@ -5,7 +5,7 @@
 //
 
 import Foundation
-@preconcurrency import os
+import os
 
 public struct ScreenReaderDependencies: Sendable {
     public let isTrusted: @Sendable (Bool) -> Bool

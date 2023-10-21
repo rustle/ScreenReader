@@ -43,29 +43,11 @@ public actor ScreenReader {
         runningApplicationsTask?.cancel()
         runningApplicationsTask = nil
     }
-    struct ServerKey: Hashable {
-        let processIdentifier: pid_t
-        let bundleIdentifier: BundleIdentifier
-    }
-    private var running: [ServerKey:Server] = [:]
-}
-
-private extension Array where Element == NSRunningApplication {
-    func identifiers() -> [ScreenReader.ServerKey] {
-        compactMap { application in
-            guard let bundleIdentifier = BundleIdentifier(rawValue: application.bundleIdentifier) else {
-                return nil
-            }
-            return .init(
-                processIdentifier: application.processIdentifier,
-                bundleIdentifier: bundleIdentifier
-            )
-        }
-    }
+    private var running: [RunningApplication:Server] = [:]
 }
 
 extension ScreenReader {
-    private func handleApplication(change: ArrayChange<NSRunningApplication>) async {
+    private func handleApplication(change: ArrayChange<RunningApplication>) async {
         switch change {
         case .insert(let applications):
             await add(applications: applications)
@@ -79,8 +61,8 @@ extension ScreenReader {
             await add(applications: applications)
         }
     }
-    private func add(applications: [NSRunningApplication]) async {
-        for key in applications.identifiers() {
+    private func add(applications: [RunningApplication]) async {
+        for key in applications {
             do {
                 let server = try await serverProvider.connect(
                     processIdentifier: key.processIdentifier,
@@ -97,8 +79,8 @@ extension ScreenReader {
             }
         }
     }
-    private func remove(applications: [NSRunningApplication]) async {
-        for key in applications.identifiers() {
+    private func remove(applications: [RunningApplication]) async {
+        for key in applications {
             if let server = running.removeValue(forKey: .init(processIdentifier: key.processIdentifier,
                                                               bundleIdentifier: key.bundleIdentifier)) {
                 Loggers.logger.debug("Remove \(key.processIdentifier) \(key.bundleIdentifier)")

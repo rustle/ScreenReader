@@ -1,11 +1,11 @@
-// swift-tools-version: 5.6
+// swift-tools-version: 5.9
 
 import PackageDescription
 
 let package = Package(
     name: "ScreenReader",
     platforms: [
-        .macOS(.v12),
+        .macOS(.v14),
     ],
     products: [
         .library(

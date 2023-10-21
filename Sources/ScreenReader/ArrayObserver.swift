@@ -8,14 +8,6 @@ import Foundation
 
 /// Type and value of a single change notification
 public enum ArrayChange<Element>: Equatable where Element: Equatable {
-    /// Indicates that the value of the observed key path was set to a new value. This change can occur when observing an attribute of an object, as well as properties that specify to-one and to-many relationships.
-    case set([Element])
-    /// Indicates that an object has been inserted into the to-many relationship that is being observed.
-    case insert([Element])
-    /// Indicates that an object has been removed from the to-many relationship that is being observed.
-    case remove([Element])
-    /// Indicates that an object has been replaced in the to-many relationship that is being observed.
-    case replace([Element], [Element])
     public static func ==(
         lhs: Self,
         rhs: Self
@@ -67,6 +59,26 @@ public enum ArrayChange<Element>: Equatable where Element: Equatable {
                     lValue1 == rValue1 &&
                     lValue2 == rValue2
             }
+        }
+    }
+    /// Indicates that the value of the observed key path was set to a new value. This change can occur when observing an attribute of an object, as well as properties that specify to-one and to-many relationships.
+    case set([Element])
+    /// Indicates that an object has been inserted into the to-many relationship that is being observed.
+    case insert([Element])
+    /// Indicates that an object has been removed from the to-many relationship that is being observed.
+    case remove([Element])
+    /// Indicates that an object has been replaced in the to-many relationship that is being observed.
+    case replace([Element], [Element])
+    public func map<ElementOfResult>(_ transform: (Element) -> ElementOfResult) -> ArrayChange<ElementOfResult> {
+        switch self {
+        case .set(let elements):
+            .set(elements.map(transform))
+        case .insert(let elements):
+            .insert(elements.map(transform))
+        case .remove(let elements):
+            .remove(elements.map(transform))
+        case let .replace(l, r):
+            .replace(l.map(transform), r.map(transform))
         }
     }
 }
