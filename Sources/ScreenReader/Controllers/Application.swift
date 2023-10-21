@@ -91,7 +91,7 @@ public actor Application<ObserverType: Observer>: Controller where ObserverType.
                 logger.info("\(error.localizedDescription)")
             }
         } catch {
-            logger.error("\(error.localizedDescription)")
+            logger.error("\(#line):\(error.localizedDescription)")
         }
         for window in try element.windows() {
             do {
@@ -100,7 +100,7 @@ public actor Application<ObserverType: Observer>: Controller where ObserverType.
                     observer: observer
                 )
             } catch {
-                logger.error("\(error.localizedDescription)")
+                logger.error("\(#line):\(error.localizedDescription)")
             }
         }
         do {
@@ -173,7 +173,7 @@ public actor Application<ObserverType: Observer>: Controller where ObserverType.
             try await focusedUIElement?.start()
             try await focusedUIElement?.focus()
         } catch {
-            logger.error("\(error.localizedDescription)")
+            logger.error("\(#line):\(error.localizedDescription)")
         }
     }
 }
