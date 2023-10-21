@@ -28,7 +28,7 @@ enum ControllerObserverError: Error {
         case .notImplemented:
             return "ControllerObserverError.notImplemented - Indicates that the function or method is not implemented (this can be returned if a process does not support the accessibility API)."
         case .notificationUnsupported:
-            return "ControllerObserverError.notificationUnsupported - he notification is not supported by the UIElement"
+            return "ControllerObserverError.notificationUnsupported - The notification is not supported by the UIElement"
         case .invalidUIElement:
             return "ControllerObserverError.invalidUIElement - The UIElement passed to the function is invalid."
         case .cannotComplete:
