@@ -108,6 +108,7 @@ public actor Application<ObserverType: Observer>: Controller where ObserverType.
                 element: try element.focusedUIElement(),
                 userInfo: nil
             )
+        } catch ElementError.noValue {
         } catch {
             logger.error("\(error.localizedDescription)")
         }
