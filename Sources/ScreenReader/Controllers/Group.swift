@@ -1,6 +1,6 @@
 //
-//  ComboBox.swift
-//
+//  Group.swift
+//  
 //  Copyright © 2017-2023 Doug Russell. All rights reserved.
 //
 
@@ -8,12 +8,12 @@ import AccessibilityElement
 import Foundation
 import os
 
-public actor ComboBox<ObserverType: Observer>: Controller where ObserverType.ObserverElement: Hashable {
+public actor Group<ObserverType: Observer>: Controller where ObserverType.ObserverElement: Hashable {
     public typealias ElementType = ObserverType.ObserverElement
     public let element: ElementType
 
     private var logger: Logger {
-        Loggers.Controller.comboBox
+        Loggers.Controller.group
     }
 
     let observer: ApplicationObserver<ObserverType>
@@ -29,19 +29,19 @@ public actor ComboBox<ObserverType: Observer>: Controller where ObserverType.Obs
         self.observer = observer
     }
     public func start() async throws {
-        logger.debug("\(type(of: self)).\(#function) \(self.element)")
+        logger.debug("\(type(of: self)).\(#function):\(#line) \(self.element)")
         guard runState == .stopped else { return }
         runState = .running
     }
-    public func focus() async throws {
-        logger.debug("\(type(of: self)).\(#function) \(self.element)")
-    }
     public func stop() async throws {
-        logger.debug("\(type(of: self)).\(#function) \(self.element)")
+        logger.debug("\(type(of: self)).\(#function):\(#line) \(self.element)")
         guard runState == .running else { return }
         observerTasks = []
         runState = .stopped
     }
+    public func focus() async throws {
+        logger.debug("\(type(of: self)).\(#function):\(#line) \(self.element)")
+    }
 }
 
-extension ComboBox: ObserverHosting {}
+extension Group: ObserverHosting {}

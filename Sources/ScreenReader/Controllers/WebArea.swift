@@ -9,7 +9,7 @@ import Foundation
 import os
 import TargetAction
 
-public final class WebArea<ObserverType: Observer>: Controller where ObserverType.ObserverElement: Hashable {
+public actor WebArea<ObserverType: Observer>: Controller where ObserverType.ObserverElement: Hashable {
     public typealias ElementType = ObserverType.ObserverElement
     public let element: ElementType
 
@@ -20,6 +20,8 @@ public final class WebArea<ObserverType: Observer>: Controller where ObserverTyp
     let observer: ApplicationObserver<ObserverType>
     private var observerTasks: [Task<Void, any Error>] = []
 
+    private var runState: RunState = .stopped
+
     public init(
         element: ElementType,
         observer: ApplicationObserver<ObserverType>
@@ -28,14 +30,12 @@ public final class WebArea<ObserverType: Observer>: Controller where ObserverTyp
         self.observer = observer
     }
     public func start() async throws {
-        logger.info("\(#function) \(self.element)")
+        logger.debug("\(type(of: self)).\(#function) \(self.element)")
+        guard runState == .stopped else { return }
         do {
             observerTasks.append(try await add(
                 notification: .selectedTextChanged,
-                handler: TargetAction.target(
-                    self,
-                    action: WebArea<ObserverType>.selectedTextChanged
-                )
+                handler: target(action: WebArea<ObserverType>.selectedTextChanged)
             ))
         } catch let error as ControllerObserverError {
             logger.info("\(error.localizedDescription)")
@@ -44,14 +44,14 @@ public final class WebArea<ObserverType: Observer>: Controller where ObserverTyp
         }
     }
     public func stop() async throws {
-        logger.info("\(#function) \(self.element)")
-        observerTasks.cancel()
+        logger.debug("\(type(of: self)).\(#function) \(self.element)")
+        observerTasks = []
     }
     private func selectedTextChanged(
         element: ElementType,
         userInfo: [String:Any]?
     ) async {
-        logger.info("\(#function) \(element) \(String(describing: userInfo))")
+        logger.debug("\(type(of: self)).\(#function) \(element) \(String(describing: userInfo))")
     }
 }
 

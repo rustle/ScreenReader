@@ -1,7 +1,7 @@
 //
 //  ObserverHosting.swift
 //  
-//  Copyright © 2017-2022 Doug Russell. All rights reserved.
+//  Copyright © 2017-2023 Doug Russell. All rights reserved.
 //
 
 import AccessibilityElement
@@ -29,15 +29,5 @@ extension ObserverHosting {
             notification: notification,
             handler: handler
         )
-    }
-}
-
-extension Array where Element == Task<Void, any Error> {
-    mutating func cancel() {
-        let tasks = self
-        self.removeAll()
-        for task in tasks {
-            task.cancel()
-        }
     }
 }

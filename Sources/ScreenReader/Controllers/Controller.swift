@@ -1,7 +1,7 @@
 //
 //  Controller.swift
 //
-//  Copyright © 2017-2022 Doug Russell. All rights reserved.
+//  Copyright © 2017-2023 Doug Russell. All rights reserved.
 //
 
 import AccessibilityElement
@@ -40,6 +40,11 @@ enum ControllerObserverError: Error {
             return "ControllerObserverError.multiple - (\n\(descriptions.joined(separator: ",\n"))\n)"
         }
     }
+}
+
+enum RunState {
+    case running
+    case stopped
 }
 
 extension Controller {

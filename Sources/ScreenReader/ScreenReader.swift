@@ -73,7 +73,7 @@ extension ScreenReader {
                 try await server.start()
                 running[key] = server
             } catch ServerProviderError.ignored {
-                //Loggers.logger.error("Ignored \(key.processIdentifier) \(key.bundleIdentifier)")
+                Loggers.logger.error("Ignored \(key.processIdentifier) \(key.bundleIdentifier)")
             } catch {
                 Loggers.logger.error("\(error.localizedDescription)")
             }

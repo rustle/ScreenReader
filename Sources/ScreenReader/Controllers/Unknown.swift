@@ -1,14 +1,14 @@
 //
 //  Unknown.swift
 //
-//  Copyright © 2017-2022 Doug Russell. All rights reserved.
+//  Copyright © 2017-2023 Doug Russell. All rights reserved.
 //
 
 import AccessibilityElement
 import Foundation
 import os
 
-public final class Unknown<ObserverType: Observer>: Controller where ObserverType.ObserverElement: Hashable {
+public actor Unknown<ObserverType: Observer>: Controller where ObserverType.ObserverElement: Hashable {
     public typealias ElementType = ObserverType.ObserverElement
     let element: ElementType
 
@@ -18,6 +18,8 @@ public final class Unknown<ObserverType: Observer>: Controller where ObserverTyp
 
     let observer: ApplicationObserver<ObserverType>
     private var observerTasks: [Task<Void, any Error>] = []
+
+    private var runState: RunState = .stopped
 
 #if DEBUG
     private var cachedDebugInfo: [String:Any]?
@@ -31,7 +33,8 @@ public final class Unknown<ObserverType: Observer>: Controller where ObserverTyp
         self.observer = observer
     }
     public func start() async throws {
-        logger.info("\(#function) \(self.element)")
+        logger.debug("\(type(of: self)).\(#function) \(self.element)")
+        guard runState == .stopped else { return }
 #if DEBUG
         if let element = element as? SystemElement {
             cachedDebugInfo = element.debugInfo
@@ -41,19 +44,19 @@ public final class Unknown<ObserverType: Observer>: Controller where ObserverTyp
 #endif // DEBUG
     }
     public func focus() async throws {
-        logger.info("\(#function) \(self.element)")
+        logger.debug("\(type(of: self)).\(#function) \(self.element)")
     }
     public func stop() async throws {
 #if DEBUG
         if let cachedDebugInfo = cachedDebugInfo {
-            logger.info("\(#function) \(self.element) \(cachedDebugInfo)")
+            logger.debug("\(type(of: self)).\(#function) \(self.element) \(cachedDebugInfo)")
         } else {
-            logger.info("\(#function) \(self.element)")
+            logger.debug("\(type(of: self)).\(#function) \(self.element)")
         }
 #else
-        logger.info("\(#function) \(self.element)")
+        logger.debug("\(type(of: self)).\(#function) \(self.element)")
 #endif // DEBUG
-        observerTasks.cancel()
+        observerTasks = []
     }
 }
 

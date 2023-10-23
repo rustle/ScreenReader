@@ -9,7 +9,7 @@ import Cocoa
 import TargetAction
 import os
 
-public final class Table<ObserverType: Observer>: Controller where ObserverType.ObserverElement: Hashable {
+public actor Table<ObserverType: Observer>: Controller where ObserverType.ObserverElement: Hashable {
     public typealias ElementType = ObserverType.ObserverElement
     public let element: ElementType
 
@@ -20,6 +20,8 @@ public final class Table<ObserverType: Observer>: Controller where ObserverType.
     let observer: ApplicationObserver<ObserverType>
     private var observerTasks: [Task<Void, any Error>] = []
 
+    private var runState: RunState = .stopped
+
     public init(
         element: ElementType,
         observer: ApplicationObserver<ObserverType>
@@ -28,21 +30,17 @@ public final class Table<ObserverType: Observer>: Controller where ObserverType.
         self.observer = observer
     }
     public func start() async throws {
-        logger.info("\(#function) \(self.element)")
+        logger.debug("\(type(of: self)).\(#function) \(self.element)")
+        guard runState == .stopped else { return }
         try await _add(
             notification: .selectedRowsChanged,
-            handler: TargetAction.target(
-                self,
-                action: Table<ObserverType>.selectionChanged
-            )
+            handler: target(action: Table<ObserverType>.selectionChanged)
         )
         try await _add(
             notification: .selectedColumnsChanged,
-            handler: TargetAction.target(
-                self,
-                action: Table<ObserverType>.selectionChanged
-            )
+            handler: target(action: Table<ObserverType>.selectionChanged)
         )
+        runState = .running
         await selectionChanged(
             element: element,
             userInfo: nil
@@ -64,21 +62,24 @@ public final class Table<ObserverType: Observer>: Controller where ObserverType.
         }
     }
     public func focus() async throws {
-        logger.info("\(#function) \(self.element)")
+        logger.debug("\(type(of: self)).\(#function) \(self.element)")
     }
     public func stop() async throws {
-        observerTasks.cancel()
+        logger.debug("\(type(of: self)).\(#function) \(self.element)")
+        guard runState == .running else { return }
+        observerTasks = []
+        runState = .stopped
     }
     private func selectionChanged(
         element: ElementType,
         userInfo: [String:Any]?
     ) async {
-        logger.info("\(#function) \(element)")
+        logger.debug("\(type(of: self)).\(#function) \(self.element)")
         do {
             let cells = try element.selectedCells()
-            logger.info("\(#function) \(cells)")
+            logger.debug("\(type(of: self)).\(#function) \(cells)")
         } catch {
-            logger.error("\(#function) \(error.localizedDescription)")
+            logger.debug("\(type(of: self)).\(#function) \(error.localizedDescription)")
         }
     }
 }

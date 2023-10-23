@@ -8,7 +8,7 @@ import AccessibilityElement
 import Foundation
 import os
 
-public final class Window<ObserverType: Observer>: Controller where ObserverType.ObserverElement: Hashable {
+public actor Window<ObserverType: Observer>: Controller where ObserverType.ObserverElement: Hashable {
     public typealias ElementType = ObserverType.ObserverElement
     public let element: ElementType
 
@@ -19,6 +19,8 @@ public final class Window<ObserverType: Observer>: Controller where ObserverType
         Loggers.Controller.window
     }
 
+    private var runState: RunState = .stopped
+
     public init(
         element: ElementType,
         observer: ApplicationObserver<ObserverType>
@@ -27,11 +29,15 @@ public final class Window<ObserverType: Observer>: Controller where ObserverType
         self.observer = observer
     }
     public func start() async throws {
-        logger.info("\(#function) \(self.element)")
+        logger.debug("\(type(of: self)).\(#function) \(self.element)")
+        guard runState == .stopped else { return }
+        runState = .running
     }
     public func stop() async throws {
-        logger.info("\(#function) \(self.element)")
-        observerTasks.cancel()
+        logger.debug("\(type(of: self)).\(#function) \(self.element)")
+        guard runState == .running else { return }
+        observerTasks = []
+        runState = .stopped
     }
 }
 

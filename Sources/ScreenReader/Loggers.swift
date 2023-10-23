@@ -32,6 +32,10 @@ struct Loggers {
             subsystem: "ScreenReader",
             category: "ComboBox"
         )
+        static let group = Logger(
+            subsystem: "ScreenReader",
+            category: "Group"
+        )
         static let list = Logger(
             subsystem: "ScreenReader",
             category: "List"
@@ -39,6 +43,10 @@ struct Loggers {
         static let table = Logger(
             subsystem: "ScreenReader",
             category: "Table"
+        )
+        static let textField = Logger(
+            subsystem: "ScreenReader",
+            category: "TextField"
         )
         static let textArea = Logger(
             subsystem: "ScreenReader",

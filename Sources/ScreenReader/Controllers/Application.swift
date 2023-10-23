@@ -1,7 +1,7 @@
 //
 //  Application.swift
 //
-//  Copyright © 2017-2022 Doug Russell. All rights reserved.
+//  Copyright © 2017-2023 Doug Russell. All rights reserved.
 //
 
 import AccessibilityElement
@@ -15,11 +15,6 @@ public enum ApplicationError: Error {
 public actor Application<ObserverType: Observer>: Controller where ObserverType.ObserverElement: Hashable {
     public typealias ElementType = ObserverType.ObserverElement
 
-    public typealias ControllerFactory = (
-        ElementType,
-        ApplicationObserver<ObserverType>
-    ) async throws -> Controller
-
     private var logger: Logger {
         Loggers.Controller.application
     }
@@ -29,17 +24,18 @@ public actor Application<ObserverType: Observer>: Controller where ObserverType.
     private var observer: ApplicationObserver<ObserverType>?
     private var observerTasks: [Task<Void, any Error>] = []
 
-    private var focusedUIElement: Controller?
+    private var focus: [Controller] = []
+
     private let output: Output
     private var observerFactory: () async throws -> ApplicationObserver<ObserverType>
-    private var controllerFactory: ControllerFactory
+    private var controllerFactory: ControllerFactory<ObserverType>
     private var hierarchy: ControllerHierarchy<ObserverType>?
 
     public init(
         element: ElementType,
         output: Output,
         observerFactory: @escaping () async throws -> ApplicationObserver<ObserverType>,
-        controllerFactory: @escaping (ElementType, ApplicationObserver<ObserverType>) async throws -> Controller
+        controllerFactory: @escaping ControllerFactory<ObserverType>
     ) async throws {
         self.element = element
         self.output = output
@@ -117,112 +113,112 @@ public actor Application<ObserverType: Observer>: Controller where ObserverType.
         guard let observer = observer else { return }
         try await observer.stop()
         self.observer = nil
-        observerTasks.cancel()
+        observerTasks = []
     }
     private func windowCreated(
         window: ElementType,
         userInfo: [String:Any]?
     ) async {
-        logger.info("\(#function):\(#line) \(window)")
+        logger.debug("\(type(of: self)).\(#function):\(#line) \(window)")
         do {
-            guard let hierarchy = hierarchy else { return }
-            guard let observer = observer else { return }
-            try await hierarchy.controller(
-                element: window,
-                observer: observer
-            )
+            try await focus()
         } catch {
-            logger.error("\(#function):\(#line) \(error.localizedDescription)")
+            logger.error("\(type(of: self)).\(#function):\(#line) \(window.description)")
         }
     }
     private func focusedWindowChanged(
         element: ElementType,
         userInfo: [String:Any]?
     ) async {
-        Loggers.Controller.application.info("\(#function):\(#line) \(element)")
-//        guard let observer = observer else { return }
-//        do {
-//            try await Self.controller(
-//                element: try element.focusedWindow(),
-//                observer: observer
-//            )
-//                .focus()
-//        } catch {
-//            logger.error("\(#function):\(#line) \(error.localizedDescription)")
-//        }
+        logger.debug("\(type(of: self)).\(#function):\(#line) \(element)")
+        do {
+            try await focus()
+        } catch {
+            logger.error("\(type(of: self)).\(#function):\(#line) \(element.description)")
+        }
     }
     private func focusedUIElementChanged(
         element: ElementType,
         userInfo: [String:Any]?
     ) async {
-        guard let observer = observer else { return }
-        logger.info("\(#function) \(element.description)")
+        logger.debug("\(type(of: self)).\(#function):\(#line) \(element.description)")
         do {
-            try await focusedUIElement?.stop()
+            try await focus()
         } catch {
-            logger.error("\(error.localizedDescription)")
+            logger.error("\(type(of: self)).\(#function):\(#line) \(error.localizedDescription)")
         }
+    }
+    public func focus() async throws {
+        logger.debug("\(type(of: self)).\(#function):\(#line) \(self.element)")
+        guard let observer else { return }
+        guard let hierarchy else { return }
         do {
-            focusedUIElement = try await Self.controller(
-                element: element,
+            let focusedUIElement = try element.focusedUIElement()
+            focus = try await hierarchy.focus(
+                application: element,
+                element: focusedUIElement,
                 observer: observer
             )
+            try await focus.last?.focus()
         } catch {
-            logger.error("\(error.localizedDescription)")
-        }
-        do {
-            try await focusedUIElement?.start()
-            try await focusedUIElement?.focus()
-        } catch {
-            logger.error("\(#line):\(error.localizedDescription)")
+            logger.error("\(type(of: self)).\(#function):\(#line) \(error.localizedDescription)")
         }
     }
 }
 
 extension Application {
-    public static func controller(
+    fileprivate static func controller(
         element: ElementType,
         observer: ApplicationObserver<ObserverType>
     ) async throws -> Controller {
-        let role = try element.role()
-        switch role {
+        switch try element.role() {
         case .button:
-            return try await Button(
+            try await Button(
                 element: element,
                 observer: observer
             )
         case .comboBox:
-            return try await ComboBox(
+            try await ComboBox(
+                element: element,
+                observer: observer
+            )
+        case .group:
+            try await Group(
                 element: element,
                 observer: observer
             )
         case .list:
-            return try await List(
+            try await List(
                 element: element,
                 observer: observer
             )
         case .table:
-            return try await Table(
+            try await Table(
+                element: element,
+                observer: observer
+            )
+        case .textField:
+            try await TextField(
                 element: element,
                 observer: observer
             )
         case .textArea:
-            return try await TextArea(
+            try await TextArea(
                 element: element,
                 observer: observer
             )
         case .webArea:
-            return try await WebArea(
+            try await WebArea(
                 element: element,
                 observer: observer
             )
         case .window:
-            return try await Window(
+            try await Window(
                 element: element,
                 observer: observer
             )
         default:
-            return try await Unknown(
+            try await Unknown(
                 element: element,
                 observer: observer
             )

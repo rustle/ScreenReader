@@ -26,7 +26,6 @@ public actor ServerProvider {
         output: Output,
         updateFocusOnConnect: Bool = false
     ) async throws -> Server {
-        logger.info("Connect \(bundleIdentifier) -- \(processIdentifier) -- updateFocusOnConnect \(updateFocusOnConnect)")
         guard processIdentifier != getpid() else {
             throw ServerProviderError.ignored
         }
@@ -36,6 +35,7 @@ public actor ServerProvider {
         if !inclusionList.isEmpty, !inclusionList.contains(bundleIdentifier) {
             throw ServerProviderError.ignored
         }
+        logger.debug("Connect \(bundleIdentifier) -- \(processIdentifier) -- updateFocusOnConnect \(updateFocusOnConnect)")
         return try await .init(
             processIdentifier: processIdentifier,
             bundleIdentifier: bundleIdentifier,
