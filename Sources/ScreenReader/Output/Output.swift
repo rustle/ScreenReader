@@ -1,10 +1,10 @@
 //
 //  Output.swift
 //
-//  Copyright © 2017-2022 Doug Russell. All rights reserved.
+//  Copyright © 2017-2023 Doug Russell. All rights reserved.
 //
 
-import Cocoa
+import Foundation
 
 public protocol OutputContext {
     func submit(job: Output.Job) async throws
@@ -46,7 +46,7 @@ public actor Output: OutputContext {
         Braille(),
     ]
     public func submit(job: Job) async throws {
-        Loggers.Output.text.info("\(#function) \(job)")
+        Loggers.Output.output.debug("\(job)")
         for context in contexts {
             try await context.submit(job: job)
         }

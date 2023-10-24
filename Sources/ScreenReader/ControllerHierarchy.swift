@@ -10,6 +10,7 @@ import os
 
 public typealias ControllerFactory<ObserverType: AccessibilityElement.Observer> = (
     ObserverType.ObserverElement,
+    AsyncStream<Output.Job>.Continuation,
     ApplicationObserver<ObserverType>
 ) async throws -> Controller where ObserverType.ObserverElement: Hashable
 
@@ -40,7 +41,7 @@ actor ControllerHierarchy<ObserverType: AccessibilityElement.Observer> where Obs
         element: ElementType,
         userInfo: [String:Any]?
     ) async {
-        logger.debug("\(type(of: self)).\(#function) \(element)")
+        logger.debug("\(element)")
         guard let context = controllers.removeValue(forKey: element) else { return }
         if let task = context.task {
             task.cancel()
@@ -56,15 +57,23 @@ actor ControllerHierarchy<ObserverType: AccessibilityElement.Observer> where Obs
     func focus(
         application: ElementType,
         element: ElementType,
+        output: AsyncStream<Output.Job>.Continuation,
         observer: ApplicationObserver<ObserverType>
     ) async throws -> [Controller] {
-        logger.debug("\(type(of: self)).\(#function):\(#line) \(element)")
+        logger.debug("\(element)")
         do {
             var newFocus = [Controller]()
-            var current: ElementType? = try element.focusedUIElement()
+            var current: ElementType?
+            do {
+                current = try element.focusedUIElement()
+            } catch {
+                logger.error("\(error.localizedDescription)")
+                current = element
+            }
             while current != nil, current != application {
                 newFocus.append(try await controller(
                     element: current!,
+                    output: output,
                     observer: observer
                 ))
                 current = try? current?.parent()
@@ -74,26 +83,42 @@ actor ControllerHierarchy<ObserverType: AccessibilityElement.Observer> where Obs
             }
             return newFocus.reversed()
         } catch {
-            logger.error("\(type(of: self)).\(#function):\(#line) \(error.localizedDescription)")
+            logger.error("\(error.localizedDescription)")
             return []
         }
     }
     @discardableResult
     func controller(
         element: ElementType,
+        output: AsyncStream<Output.Job>.Continuation,
         observer: ApplicationObserver<ObserverType>
     ) async throws -> Controller {
         if let context = controllers[element] {
-            logger.debug("\(type(of: self)).\(#function) Cached controller for \(element)")
+            logger.debug("Cached controller for \(element)")
             return context.controller
         }
-        logger.debug("\(type(of: self)).\(#function) \(element)")
-        let task = try await observerStreamTask(
-            element: element,
-            observer: observer
-        )
+        logger.debug("\(element)")
+        let task: Task<Void, Error>?
+        do {
+            task = try await observerStreamTask(
+                element: element,
+                observer: observer
+            )
+        } catch let error as ControllerObserverError {
+            switch error {
+            case .notificationUnsupported:
+                break;
+            default:
+                logger.error("\(error.localizedDescription)")
+            }
+            task = nil
+        } catch {
+            logger.error("\(error.localizedDescription)")
+            task = nil
+        }
         let controller = try await controllerFactory(
             element,
+            output,
             observer
         )
         controllers[element] = .init(

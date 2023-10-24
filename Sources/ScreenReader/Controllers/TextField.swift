@@ -12,25 +12,30 @@ import os
 public actor TextField<ObserverType: Observer>: Controller where ObserverType.ObserverElement: Hashable {
     public typealias ElementType = ObserverType.ObserverElement
     public let element: ElementType
+    public var identifier: AnyHashable {
+        element
+    }
 
+    let observer: ApplicationObserver<ObserverType>
+
+    private var observerTasks: [Task<Void, any Error>] = []
+    private var runState: RunState = .stopped
+    private let output: AsyncStream<Output.Job>.Continuation
     private var logger: Logger {
         Loggers.Controller.textField
     }
 
-    let observer: ApplicationObserver<ObserverType>
-    private var observerTasks: [Task<Void, any Error>] = []
-
-    private var runState: RunState = .stopped
-
     public init(
         element: ElementType,
+        output: AsyncStream<Output.Job>.Continuation,
         observer: ApplicationObserver<ObserverType>
     ) async throws {
         self.element = element
+        self.output = output
         self.observer = observer
     }
     public func start() async throws {
-        logger.debug("\(type(of: self)).\(#function):\(#line) \(self.element)")
+        logger.debug("\(self.element)")
         guard runState == .stopped else { return }
         do {
             observerTasks.append(try await add(
@@ -55,10 +60,36 @@ public actor TextField<ObserverType: Observer>: Controller where ObserverType.Ob
         runState = .running
     }
     public func focus() async throws {
-        logger.debug("\(type(of: self)).\(#function) \(self.element)")
+        logger.debug("\(self.element)")
+        var buffer = [String]()
+        buffer.reserveCapacity(3)
+        if let title = try? element.title(), title.count > 0 {
+            buffer.append(title)
+        } else if let titleUIElement = try? element.titleUIElement(), let title = try? titleUIElement.title(), title.count > 0 {
+            buffer.append(title)
+        }
+        if let roleDescription = try? element.roleDescription() {
+            buffer.append(roleDescription) // 2
+        }
+        if let value = try? element.value() {
+            if let string = value as? String {
+                buffer.append(string)
+            } else {
+                logger.debug("\(String(describing: value))")
+            }
+        }
+        output.yield(
+            .init(
+                options: [],
+                identifier: "",
+                payloads: [
+                    .speech("Focus \(buffer.joined(separator: ", "))", nil)
+                ]
+            )
+        )
     }
     public func stop() async throws {
-        logger.debug("\(type(of: self)).\(#function) \(self.element)")
+        logger.debug("\(self.element)")
         guard runState == .running else { return }
         observerTasks = []
         runState = .stopped
@@ -67,13 +98,13 @@ public actor TextField<ObserverType: Observer>: Controller where ObserverType.Ob
         element: ElementType,
         userInfo: [String:Any]?
     ) async {
-        logger.debug("\(type(of: self)).\(#function) \(self.element)")
+        logger.debug("\(self.element)")
     }
     private func selectedTextChanged(
         element: ElementType,
         userInfo: [String:Any]?
     ) async {
-        logger.debug("\(type(of: self)).\(#function) \(self.element)")
+        logger.debug("\(self.element)")
     }
 }
 

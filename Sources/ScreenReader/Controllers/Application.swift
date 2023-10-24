@@ -14,22 +14,25 @@ public enum ApplicationError: Error {
 
 public actor Application<ObserverType: Observer>: Controller where ObserverType.ObserverElement: Hashable {
     public typealias ElementType = ObserverType.ObserverElement
-
-    private var logger: Logger {
-        Loggers.Controller.application
+    public let element: ElementType
+    public var identifier: AnyHashable {
+        element
     }
 
-    public let element: ElementType
-
+    private var runState: RunState = .stopped
     private var observer: ApplicationObserver<ObserverType>?
     private var observerTasks: [Task<Void, any Error>] = []
-
     private var focus: [Controller] = []
-
     private let output: Output
     private var observerFactory: () async throws -> ApplicationObserver<ObserverType>
     private var controllerFactory: ControllerFactory<ObserverType>
     private var hierarchy: ControllerHierarchy<ObserverType>?
+    private let jobs: AsyncStream<Output.Job>
+    private let jobsContinuation: AsyncStream<Output.Job>.Continuation
+    private var jobsTask: Task<Void, any Error>?
+    private var logger: Logger {
+        Loggers.Controller.application
+    }
 
     public init(
         element: ElementType,
@@ -41,8 +44,12 @@ public actor Application<ObserverType: Observer>: Controller where ObserverType.
         self.output = output
         self.observerFactory = observerFactory
         self.controllerFactory = controllerFactory
+        (jobs, jobsContinuation) = AsyncStream<Output.Job>
+            .makeStream(bufferingPolicy: .bufferingNewest(1))
     }
     public func start() async throws {
+        logger.debug("\(self.element)")
+        guard runState == .stopped else { return }
         let observer:ApplicationObserver<ObserverType>
         let hierarchy: ControllerHierarchy<ObserverType>
         do {
@@ -68,7 +75,7 @@ public actor Application<ObserverType: Observer>: Controller where ObserverType.
                 handler: target(action: Application.windowCreated)
             ))
         } catch let error as ControllerObserverError {
-            logger.info("\(error.localizedDescription)")
+            logger.debug("\(error.localizedDescription)")
         } catch {
             logger.error("\(error.localizedDescription)")
         }
@@ -80,23 +87,25 @@ public actor Application<ObserverType: Observer>: Controller where ObserverType.
                 handler: target(action: Application.focusedWindowChanged)
             ))
         } catch let error as ControllerObserverError {
-            switch error {
-            case .notificationUnsupported:
-                break;
-            default:
-                logger.info("\(error.localizedDescription)")
-            }
+            logger.debug("\(error.localizedDescription)")
         } catch {
-            logger.error("\(#line):\(error.localizedDescription)")
+            logger.error("\(error.localizedDescription)")
         }
         for window in try element.windows() {
             do {
                 try await hierarchy.controller(
                     element: window,
+                    output: jobsContinuation,
                     observer: observer
                 )
             } catch {
-                logger.error("\(#line):\(error.localizedDescription)")
+                logger.error("\(error.localizedDescription)")
+            }
+        }
+        precondition(jobsTask == nil)
+        jobsTask = Task(priority: .userInitiated) {
+            for await job in jobs {
+                try await output.submit(job: job)
             }
         }
         do {
@@ -110,46 +119,50 @@ public actor Application<ObserverType: Observer>: Controller where ObserverType.
         }
     }
     public func stop() async throws {
+        logger.debug("\(self.element)")
+        guard runState == .running else { return }
         guard let observer = observer else { return }
         try await observer.stop()
         self.observer = nil
         observerTasks = []
+        jobsTask?.cancel()
+        jobsTask = nil
     }
     private func windowCreated(
         window: ElementType,
         userInfo: [String:Any]?
     ) async {
-        logger.debug("\(type(of: self)).\(#function):\(#line) \(window)")
+        logger.debug("\(window)")
         do {
             try await focus()
         } catch {
-            logger.error("\(type(of: self)).\(#function):\(#line) \(window.description)")
+            logger.error("\(window.description)")
         }
     }
     private func focusedWindowChanged(
         element: ElementType,
         userInfo: [String:Any]?
     ) async {
-        logger.debug("\(type(of: self)).\(#function):\(#line) \(element)")
+        logger.debug("\(element)")
         do {
             try await focus()
         } catch {
-            logger.error("\(type(of: self)).\(#function):\(#line) \(element.description)")
+            logger.error("\(element.description)")
         }
     }
     private func focusedUIElementChanged(
         element: ElementType,
         userInfo: [String:Any]?
     ) async {
-        logger.debug("\(type(of: self)).\(#function):\(#line) \(element.description)")
+        logger.debug("\(element.description)")
         do {
             try await focus()
         } catch {
-            logger.error("\(type(of: self)).\(#function):\(#line) \(error.localizedDescription)")
+            logger.error("\(error.localizedDescription)")
         }
     }
     public func focus() async throws {
-        logger.debug("\(type(of: self)).\(#function):\(#line) \(self.element)")
+        logger.debug("\(self.element)")
         guard let observer else { return }
         guard let hierarchy else { return }
         do {
@@ -157,11 +170,12 @@ public actor Application<ObserverType: Observer>: Controller where ObserverType.
             focus = try await hierarchy.focus(
                 application: element,
                 element: focusedUIElement,
+                output: jobsContinuation,
                 observer: observer
             )
             try await focus.last?.focus()
         } catch {
-            logger.error("\(type(of: self)).\(#function):\(#line) \(error.localizedDescription)")
+            logger.error("\(error.localizedDescription)")
         }
     }
 }
@@ -169,57 +183,68 @@ public actor Application<ObserverType: Observer>: Controller where ObserverType.
 extension Application {
     fileprivate static func controller(
         element: ElementType,
+        output: AsyncStream<Output.Job>.Continuation,
         observer: ApplicationObserver<ObserverType>
     ) async throws -> Controller {
         switch try element.role() {
         case .button:
             try await Button(
                 element: element,
+                output: output,
                 observer: observer
             )
         case .comboBox:
             try await ComboBox(
                 element: element,
+                output: output,
                 observer: observer
             )
         case .group:
             try await Group(
                 element: element,
+                output: output,
                 observer: observer
             )
         case .list:
             try await List(
                 element: element,
+                output: output,
                 observer: observer
             )
         case .table:
             try await Table(
                 element: element,
+                output: output,
                 observer: observer
             )
         case .textField:
             try await TextField(
                 element: element,
+                output: output,
                 observer: observer
             )
         case .textArea:
             try await TextArea(
                 element: element,
+                output: output,
                 observer: observer
             )
         case .webArea:
             try await WebArea(
                 element: element,
+                output: output,
                 observer: observer
             )
         case .window:
             try await Window(
                 element: element,
+                output: output,
                 observer: observer
             )
         default:
             try await Unknown(
                 element: element,
+                output: output,
                 observer: observer
             )
         }
@@ -235,7 +260,7 @@ extension Application where ObserverType == SystemObserver {
             element: try .application(processIdentifier: processIdentifier),
             output: output,
             observerFactory: { .init(observer: try .init(processIdentifier: processIdentifier)) },
-            controllerFactory: Application.controller(element:observer:)
+            controllerFactory: Application.controller(element:output:observer:)
         )
     }
 }

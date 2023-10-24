@@ -10,6 +10,9 @@ import os
 
 public actor SystemWide: Controller {
     private let element: SystemElement
+    public var identifier: AnyHashable {
+        element
+    }
     public init() async throws {
         self.element = try SystemElement.systemWide()
     }

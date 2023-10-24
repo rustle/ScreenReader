@@ -7,7 +7,8 @@
 import AccessibilityElement
 import Cocoa
 
-public protocol Controller {
+public protocol Controller: Actor {
+    var identifier: AnyHashable { get async }
     func start() async throws
     func stop() async throws
     func focus() async throws
