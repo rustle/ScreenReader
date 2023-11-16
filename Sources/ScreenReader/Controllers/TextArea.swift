@@ -40,7 +40,7 @@ public actor TextArea<ObserverType: Observer>: Controller where ObserverType.Obs
         do {
             observerTasks.append(try await add(
                 notification: .valueChanged,
-                handler: target(action: TextArea<ObserverType>.valueChanged)
+                handler: target(uncheckedAction: TextArea<ObserverType>.valueChanged)
             ))
         } catch let error as ControllerObserverError {
             logger.info("\(error.localizedDescription)")
@@ -50,7 +50,7 @@ public actor TextArea<ObserverType: Observer>: Controller where ObserverType.Obs
         do {
             observerTasks.append(try await add(
                 notification: .selectedTextChanged,
-                handler: target(action: TextArea<ObserverType>.selectedTextChanged)
+                handler: target(uncheckedAction: TextArea<ObserverType>.selectedTextChanged)
             ))
         } catch let error as ControllerObserverError {
             logger.info("\(error.localizedDescription)")
@@ -70,13 +70,13 @@ public actor TextArea<ObserverType: Observer>: Controller where ObserverType.Obs
     }
     private func valueChanged(
         element: ElementType,
-        userInfo: [String:Any]?
+        userInfo: [String:Sendable]?
     ) async {
         //logger.debug("\(self.element)")
     }
     private func selectedTextChanged(
         element: ElementType,
-        userInfo: [String:Any]?
+        userInfo: [String:Sendable]?
     ) async {
         //logger.debug("\(self.element)")
     }

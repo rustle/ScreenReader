@@ -39,11 +39,11 @@ public actor Table<ObserverType: Observer>: Controller where ObserverType.Observ
         guard runState == .stopped else { return }
         try await _add(
             notification: .selectedRowsChanged,
-            handler: target(action: Table<ObserverType>.selectionChanged)
+            handler: target(uncheckedAction: Table<ObserverType>.selectionChanged)
         )
         try await _add(
             notification: .selectedColumnsChanged,
-            handler: target(action: Table<ObserverType>.selectionChanged)
+            handler: target(uncheckedAction: Table<ObserverType>.selectionChanged)
         )
         runState = .running
         await selectionChanged(
@@ -53,7 +53,7 @@ public actor Table<ObserverType: Observer>: Controller where ObserverType.Observ
     }
     private func _add(
         notification: NSAccessibility.Notification,
-        handler: @escaping (ObserverType.ObserverElement, [String : Any]?) async -> Void
+        handler: @escaping @Sendable (ObserverType.ObserverElement, [String:Sendable]?) async -> Void
     ) async throws {
         do {
             observerTasks.append(try await add(
@@ -77,7 +77,7 @@ public actor Table<ObserverType: Observer>: Controller where ObserverType.Observ
     }
     private func selectionChanged(
         element: ElementType,
-        userInfo: [String:Any]?
+        userInfo: [String:Sendable]?
     ) async {
         logger.debug("\(self.element)")
         do {

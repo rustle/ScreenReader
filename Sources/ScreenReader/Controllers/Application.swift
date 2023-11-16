@@ -72,7 +72,7 @@ public actor Application<ObserverType: Observer>: Controller where ObserverType.
                 observer: observer,
                 element: element,
                 notification: .windowCreated,
-                handler: target(action: Application.windowCreated)
+                handler: target(uncheckedAction: Application.windowCreated)
             ))
         } catch let error as ControllerObserverError {
             logger.debug("\(error.localizedDescription)")
@@ -84,7 +84,7 @@ public actor Application<ObserverType: Observer>: Controller where ObserverType.
                 observer: observer,
                 element: element,
                 notification: .focusedWindowChanged,
-                handler: target(action: Application.focusedWindowChanged)
+                handler: target(uncheckedAction: Application.focusedWindowChanged)
             ))
         } catch let error as ControllerObserverError {
             logger.debug("\(error.localizedDescription)")
@@ -130,7 +130,7 @@ public actor Application<ObserverType: Observer>: Controller where ObserverType.
     }
     private func windowCreated(
         window: ElementType,
-        userInfo: [String:Any]?
+        userInfo: [String:Sendable]?
     ) async {
         logger.debug("\(window)")
         do {
@@ -141,7 +141,7 @@ public actor Application<ObserverType: Observer>: Controller where ObserverType.
     }
     private func focusedWindowChanged(
         element: ElementType,
-        userInfo: [String:Any]?
+        userInfo: [String:Sendable]?
     ) async {
         logger.debug("\(element)")
         do {
@@ -152,7 +152,7 @@ public actor Application<ObserverType: Observer>: Controller where ObserverType.
     }
     private func focusedUIElementChanged(
         element: ElementType,
-        userInfo: [String:Any]?
+        userInfo: [String:Sendable]?
     ) async {
         logger.debug("\(element.description)")
         do {
@@ -181,6 +181,7 @@ public actor Application<ObserverType: Observer>: Controller where ObserverType.
 }
 
 extension Application {
+    @Sendable
     fileprivate static func controller(
         element: ElementType,
         output: AsyncStream<Output.Job>.Continuation,

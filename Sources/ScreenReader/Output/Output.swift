@@ -6,12 +6,12 @@
 
 import Foundation
 
-public protocol OutputContext {
+public protocol OutputContext: Sendable {
     func submit(job: Output.Job) async throws
 }
 
 public actor Output: OutputContext {
-    public struct Options: OptionSet {
+    public struct Options: OptionSet, Sendable {
         public let rawValue: Int
         public static let interrupt = Options(rawValue: 1 << 0)
         public static let punctuation = Options(rawValue: 1 << 1)
@@ -19,10 +19,10 @@ public actor Output: OutputContext {
             self.rawValue = rawValue
         }
     }
-    public struct Job {
+    public struct Job: Sendable {
         public let options: Options
         public let identifier: String
-        public enum Payload {
+        public enum Payload: Sendable {
             case pauseSpeech
             case continueSpeech
             case cancelSpeech

@@ -39,7 +39,7 @@ public actor Button<ObserverType: Observer>: Controller where ObserverType.Obser
         do {
             observerTasks.append(try await add(
                 notification: .valueChanged,
-                handler: target(action: Button<ObserverType>.valueChanged)
+                handler: target(uncheckedAction: Button<ObserverType>.valueChanged)
             ))
         } catch let error as ControllerObserverError {
             logger.info("\(error.localizedDescription)")
@@ -59,7 +59,7 @@ public actor Button<ObserverType: Observer>: Controller where ObserverType.Obser
     }
     private func valueChanged(
         element: ElementType,
-        userInfo: [String:Any]?
+        userInfo: [String:Sendable]?
     ) async {
         logger.debug("\(element)")
     }

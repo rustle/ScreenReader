@@ -21,7 +21,7 @@ let package = Package(
             from: "0.1.10"),
         .package(
             url: "https://github.com/rustle/TargetAction.git",
-            from: "0.1.0"),
+            from: "0.1.1"),
     ],
     targets: [
         .target(

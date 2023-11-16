@@ -8,13 +8,13 @@ import AccessibilityElement
 import Foundation
 import os
 
-public typealias ControllerFactory<ObserverType: AccessibilityElement.Observer> = (
+public typealias ControllerFactory<ObserverType: AccessibilityElement.Observer> = @Sendable (
     ObserverType.ObserverElement,
     AsyncStream<Output.Job>.Continuation,
     ApplicationObserver<ObserverType>
 ) async throws -> Controller where ObserverType.ObserverElement: Hashable
 
-actor ControllerHierarchy<ObserverType: AccessibilityElement.Observer> where ObserverType.ObserverElement: Hashable {
+public actor ControllerHierarchy<ObserverType: AccessibilityElement.Observer> where ObserverType.ObserverElement: Hashable {
     typealias ElementType = ObserverType.ObserverElement
     private struct ControllerContext {
         let task: Task<Void, any Error>?
@@ -28,7 +28,7 @@ actor ControllerHierarchy<ObserverType: AccessibilityElement.Observer> where Obs
     private let controllerFactory: ControllerFactory<ObserverType>
     private let observer: ApplicationObserver<ObserverType>
     private var observerTasks: Set<Task<Void, any Error>> = .init()
-    init(
+    public init(
         application: Application<ObserverType>,
         observer: ApplicationObserver<ObserverType>,
         controllerFactory: @escaping ControllerFactory<ObserverType>
@@ -39,7 +39,7 @@ actor ControllerHierarchy<ObserverType: AccessibilityElement.Observer> where Obs
     }
     private func uiElementDestroyed(
         element: ElementType,
-        userInfo: [String:Any]?
+        userInfo: [String:Sendable]?
     ) async {
         logger.debug("\(element)")
         guard let context = controllers.removeValue(forKey: element) else { return }
@@ -135,10 +135,10 @@ actor ControllerHierarchy<ObserverType: AccessibilityElement.Observer> where Obs
             element: element,
             notification: .uiElementDestroyed
         )
-        let action = target(action: ControllerHierarchy<ObserverType>.uiElementDestroyed)
+        let target = target(uncheckedAction: ControllerHierarchy<ObserverType>.uiElementDestroyed)
         let task: Task<Void, any Error> = Task(priority: .userInitiated) {
             for try await notification in stream {
-                await action(
+                await target(
                     notification.element,
                     notification.info
                 )

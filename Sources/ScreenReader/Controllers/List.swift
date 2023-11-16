@@ -39,7 +39,7 @@ public actor List<ObserverType: Observer>: Controller where ObserverType.Observe
         do {
             observerTasks.append(try await add(
                 notification: .selectedChildrenChanged,
-                handler: target(action: List<ObserverType>.selectedChildrenChanged)
+                handler: target(uncheckedAction: List<ObserverType>.selectedChildrenChanged)
             ))
         } catch let error as ControllerObserverError {
             logger.info("\(error.localizedDescription)")
@@ -88,7 +88,7 @@ public actor List<ObserverType: Observer>: Controller where ObserverType.Observe
     }
     private func selectedChildrenChanged(
         element: ElementType,
-        userInfo: [String:Any]?
+        userInfo: [String:Sendable]?
     ) async {
         logger.debug("\(self.element)")
         do {

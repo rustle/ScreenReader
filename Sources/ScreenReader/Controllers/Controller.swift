@@ -49,11 +49,12 @@ enum RunState {
 }
 
 extension Controller {
+    @Sendable
     static func add<ObserverType: Observer>(
         observer: ApplicationObserver<ObserverType>,
         element: ObserverType.ObserverElement,
         notification: NSAccessibility.Notification,
-        handler: @escaping (ObserverType.ObserverElement, [String:Any]?) async -> Void
+        handler: @escaping @Sendable (ObserverType.ObserverElement, [String:Sendable]?) async -> Void
     ) async throws -> Task<Void, any Error> {
         do {
             let stream = try await observer.stream(

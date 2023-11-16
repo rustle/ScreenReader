@@ -40,7 +40,7 @@ public actor WebArea<ObserverType: Observer>: Controller where ObserverType.Obse
         do {
             observerTasks.append(try await add(
                 notification: .selectedTextChanged,
-                handler: target(action: WebArea<ObserverType>.selectedTextChanged)
+                handler: target(uncheckedAction: WebArea<ObserverType>.selectedTextChanged)
             ))
         } catch let error as ControllerObserverError {
             logger.info("\(error.localizedDescription)")
@@ -54,9 +54,10 @@ public actor WebArea<ObserverType: Observer>: Controller where ObserverType.Obse
     }
     public func focus() async throws {
     }
+    @Sendable
     private func selectedTextChanged(
         element: ElementType,
-        userInfo: [String:Any]?
+        userInfo: [String:Sendable]?
     ) async {
         logger.debug("\(element) \(String(describing: userInfo))")
     }

@@ -83,13 +83,15 @@ public enum ArrayChange<Element>: Equatable where Element: Equatable {
     }
 }
 
+extension ArrayChange: Sendable where Element: Sendable {}
+
 /// Repackage KVO updates to an observable array
 public final class ArrayObserver<Root, Element> where Root: NSObject, Element: Equatable {
     private let observer: NSKeyValueObservation
     init(
         root: Root,
         keypath: KeyPath<Root, [Element]>,
-        changeHandler: @escaping (ArrayChange<Element>) -> Void
+        changeHandler: @escaping @Sendable (ArrayChange<Element>) -> Void
     ) {
         observer = root.observe(
             keypath,

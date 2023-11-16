@@ -35,7 +35,7 @@ public actor ScreenReader {
             .stream
             .target(
                 self,
-                action: ScreenReader.handleApplication
+                uncheckedAction: ScreenReader.handleApplication
             )
         self.runningApplications = runningApplications
     }
@@ -47,6 +47,7 @@ public actor ScreenReader {
 }
 
 extension ScreenReader {
+    @Sendable
     private func handleApplication(change: ArrayChange<RunningApplication>) async {
         switch change {
         case .insert(let applications):

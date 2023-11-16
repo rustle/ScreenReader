@@ -12,16 +12,18 @@ protocol ObserverHosting: Controller {
     typealias ElementType = ObserverType.ObserverElement
     var element: ElementType { get }
     var observer: ApplicationObserver<ObserverType> { get }
+    @Sendable
     func add(
         notification: NSAccessibility.Notification,
-        handler: @escaping (ElementType, [String:Any]?) async -> Void
+        handler: @escaping @Sendable (ElementType, [String:Sendable]?) async -> Void
     ) async throws -> Task<Void, any Error>
 }
 
 extension ObserverHosting {
+    @Sendable
     func add(
         notification: NSAccessibility.Notification,
-        handler: @escaping (ElementType, [String:Any]?) async -> Void
+        handler: @escaping @Sendable (ElementType, [String:Sendable]?) async -> Void
     ) async throws -> Task<Void, any Error> {
         try await Self.add(
             observer: observer,
