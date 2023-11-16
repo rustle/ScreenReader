@@ -6,6 +6,12 @@
 
 import Cocoa
 
+/// ScreenReader manages the lifetime
+/// and configuration of your screen reader
+/// It will request and manage a `Server`
+/// instance for each `RunningApplication`
+/// it is aware of, including monitoring
+/// the process exit and doing tear down.
 public actor ScreenReader {
     private let serverProvider: ServerProvider
     private var runningApplications: RunningApplications?
