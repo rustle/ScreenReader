@@ -50,6 +50,13 @@ public actor Application<ObserverType: Observer>: Controller where ObserverType.
     public func start() async throws {
         logger.debug("\(self.element)")
         guard runState == .stopped else { return }
+        do {
+            try element.setEnhancedUserInterface(true)
+            logger.info("Set Enhanced User Interface For \(self.element.debugDescription)")
+        } catch ElementError.notImplemented {
+        } catch {
+            logger.info("Error Setting Enhanced User Interface For \(self.element.debugDescription) \(error.localizedDescription)")
+        }
         let observer:ApplicationObserver<ObserverType>
         let hierarchy: ControllerHierarchy<ObserverType>
         do {
