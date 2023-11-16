@@ -30,6 +30,9 @@ let package = Package(
                 "AccessibilityElement",
                 "AX",
                 "TargetAction",
+            ],
+            swiftSettings: [
+                .enableExperimentalFeature("StrictConcurrency")
             ]),
         .testTarget(
             name: "ScreenReaderTests",
