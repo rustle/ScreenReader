@@ -47,6 +47,14 @@ public actor Group<ObserverType: Observer>: Controller where ObserverType.Observ
         observerTasks = []
         runState = .stopped
     }
+    public func output(event: ControllerOutputEvent) async throws -> [Output.Job.Payload] {
+        if let title = try? element.title(), !title.isEmpty {
+            return [.speech(title, nil)]
+        } else if let titleUIElement = try? element.titleUIElement(), let title = try? titleUIElement.title(), !title.isEmpty {
+            return [.speech(title, nil)]
+        }
+        return []
+    }
     public func focus() async throws {
         logger.debug("\(self.element)")
     }

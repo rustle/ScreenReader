@@ -69,7 +69,7 @@ public actor Table<ObserverType: Observer>: Controller where ObserverType.Observ
             throw error
         }
     }
-    private func output() async throws -> [Output.Job.Payload] {
+    public func output(event: ControllerOutputEvent) async throws -> [Output.Job.Payload] {
         var parts = [String]()
         if let title = try? element.title(), !title.isEmpty {
             parts.append(title)
@@ -84,7 +84,7 @@ public actor Table<ObserverType: Observer>: Controller where ObserverType.Observ
     }
     public func focus() async throws {
         logger.debug("\(self.element)")
-        let payloads = try await output()
+        let payloads = try await output(event: .focusIn)
         guard !payloads.isEmpty else {
             return
         }

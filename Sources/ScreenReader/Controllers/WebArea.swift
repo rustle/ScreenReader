@@ -55,17 +55,15 @@ public actor WebArea<ObserverType: Observer>: Controller where ObserverType.Obse
         logger.debug("\(self.element)")
         observerTasks = []
     }
-    private func output() async throws -> [Output.Job.Payload] {
+    public func output(event: ControllerOutputEvent) async throws -> [Output.Job.Payload] {
         if let roleDescription = try? element.roleDescription() {
-            return [
-                .speech(roleDescription, nil)
-            ]
+            return [.speech(roleDescription, nil)]
         }
         return []
     }
     public func focus() async throws {
         logger.debug("\(self.element)")
-        let payloads = try await output()
+        let payloads = try await output(event: .focusIn)
         guard !payloads.isEmpty else { return }
         output.yield(.init(
             options: [],

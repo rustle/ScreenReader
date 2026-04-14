@@ -72,8 +72,8 @@ public actor ControllerHierarchy<ObserverType: AccessibilityElement.Observer> wh
     // MARK: - Focus
 
     /// Builds the focus chain for the given element, diffs against the previous chain,
-    /// stops controllers that left, starts controllers that entered, then calls focus()
-    /// on the leaf.
+    /// stops controllers that left, starts controllers that entered, emits output()
+    /// payloads for ancestors at and after the divergence point, then calls focus() on the leaf.
     /// Returns the new chain (top-down) for the caller to cache.
     @discardableResult
     func focus(
@@ -145,6 +145,30 @@ public actor ControllerHierarchy<ObserverType: AccessibilityElement.Observer> wh
         }
 
         focusPath = newPath
+
+        // Emit output() payloads for ancestor nodes from the divergence point up to
+        // (but not including) the leaf. These give the user context when entering a new
+        // window, group, or other container.
+        if newPath.count > 1 {
+            let ancestorEnd = newPath.count - 1
+            if divergenceIndex < ancestorEnd {
+                var ancestorPayloads: [Output.Job.Payload] = []
+                for node in newPath[divergenceIndex..<ancestorEnd] {
+                    do {
+                        ancestorPayloads.append(contentsOf: try await node.controller.output(event: .focusThrough))
+                    } catch {
+                        logger.error("\(error.localizedDescription)")
+                    }
+                }
+                if !ancestorPayloads.isEmpty {
+                    output.yield(.init(
+                        options: [.interrupt],
+                        identifier: "",
+                        payloads: ancestorPayloads
+                    ))
+                }
+            }
+        }
 
         // Call focus() on the leaf.
         if let leaf = newPath.last {

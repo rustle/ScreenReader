@@ -62,7 +62,7 @@ public actor TextArea<ObserverType: Observer>: Controller where ObserverType.Obs
         }
         runState = .running
     }
-    private func output() async throws -> [Output.Job.Payload] {
+    public func output(event: ControllerOutputEvent) async throws -> [Output.Job.Payload] {
         var parts = [String]()
         if let title = try? element.title(), !title.isEmpty {
             parts.append(title)
@@ -77,7 +77,7 @@ public actor TextArea<ObserverType: Observer>: Controller where ObserverType.Obs
     }
     public func focus() async throws {
         logger.debug("\(self.element)")
-        let payloads = try await output()
+        let payloads = try await output(event: .focusIn)
         guard !payloads.isEmpty else { return }
         output.yield(.init(
             options: [],
@@ -107,7 +107,7 @@ public actor TextArea<ObserverType: Observer>: Controller where ObserverType.Obs
         element: ElementType,
         userInfo: [String:ObserverElementInfoValue]?
     ) async {
-        logger.debug("\(self.element)")
+        //logger.debug("\(self.element)")
     }
 }
 

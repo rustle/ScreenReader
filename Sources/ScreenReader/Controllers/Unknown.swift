@@ -49,13 +49,12 @@ public actor Unknown<ObserverType: Observer>: Controller where ObserverType.Obse
         }
 #endif // DEBUG
     }
-    private func output() async throws -> [Output.Job.Payload] {
+    public func output(event: ControllerOutputEvent) async throws -> [Output.Job.Payload] {
         var parts = [String]()
         if let title = try? element.title(), !title.isEmpty {
             parts.append(title)
         } else if let titleUIElement = try? element.titleUIElement(), let title = try? titleUIElement.title(), !title.isEmpty {
             parts.append(title)
-
         }
         if let roleDescription = try? element.roleDescription() {
             parts.append(roleDescription)
@@ -65,7 +64,7 @@ public actor Unknown<ObserverType: Observer>: Controller where ObserverType.Obse
     }
     public func focus() async throws {
         logger.debug("\(self.element)")
-        let payloads = try await output()
+        let payloads = try await output(event: .focusIn)
         guard !payloads.isEmpty else { return }
         output.yield(.init(
             options: [],

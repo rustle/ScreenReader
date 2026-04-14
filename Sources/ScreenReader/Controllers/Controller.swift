@@ -8,6 +8,12 @@ import AccessibilityElement
 import Cocoa
 import os
 
+public enum ControllerOutputEvent: Sendable {
+    case focusThrough
+    case focusIn
+    case focusOut
+}
+
 public protocol Controller: Actor {
     var identifier: AnyHashable { get async }
     func start() async throws
@@ -16,11 +22,15 @@ public protocol Controller: Actor {
     func focus() async throws
     /// Called when this controller leaves the focus chain (but its element still exists).
     func unfocus() async throws
+    /// Returns Output payloads that describe this element as context for a child gaining focus.
+    /// Used for intermediate nodes in the focus chain (window titles, group labels, etc.).
+    func output(event: ControllerOutputEvent) async throws -> [Output.Job.Payload]
 }
 
 extension Controller {
     public func focus() async throws {}
     public func unfocus() async throws {}
+    public func output(event: ControllerOutputEvent) async throws -> [Output.Job.Payload] { [] }
 }
 
 enum ControllerObserverError: Error {
