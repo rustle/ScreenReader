@@ -16,13 +16,15 @@ public actor ScreenReader {
     private let serverProvider: ServerProvider
     private var runningApplications: RunningApplications?
     private var runningApplicationsTask: Task<Void, Error>?
-    private let output = Output()
+    private let output: Output
     private let dependencies: ScreenReaderDependencies
     // Each entry is a Task that runs withServer for the app's lifetime.
     // Cancelling the task stops the server and releases its executor.
     private var runningApplicationTasks: [RunningApplication: Task<Void, Never>] = [:]
     public init(dependencies: Dependencies) {
-        self.dependencies = dependencies.screenReaderDependenciesFactory()
+        let screenReaderDeps = dependencies.screenReaderDependenciesFactory()
+        self.dependencies = screenReaderDeps
+        self.output = Output(contexts: screenReaderDeps.outputContextsFactory())
         serverProvider = ServerProvider(dependencies: dependencies.serverProviderDependenciesFactory())
     }
     public func confirmTrust() {

@@ -7,6 +7,7 @@
 import Foundation
 
 public actor Text: OutputContext {
+    public init() {}
     public func submit(job: Output.Job) async throws {
         Loggers.Output.text.debug("\(job)")
     }

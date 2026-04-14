@@ -40,16 +40,25 @@ public actor Output: OutputContext {
             self.payloads = payloads
         }
     }
-    private let contexts: [OutputContext] = [
-        Speech(),
-        Text(),
-        Braille(),
-    ]
+    private let contexts: [any OutputContext]
+
+    public init(contexts: [any OutputContext]) {
+        self.contexts = contexts
+    }
+
     public func submit(job: Job) async throws {
         Loggers.Output.output.debug("\(job)")
         for context in contexts {
             try await context.submit(job: job)
         }
+    }
+
+    public func cancel() async throws {
+        try await submit(job: .init(
+            options: [.interrupt],
+            identifier: "cancel",
+            payloads: [.cancelSpeech]
+        ))
     }
 }
 

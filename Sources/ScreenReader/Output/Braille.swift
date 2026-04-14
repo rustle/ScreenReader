@@ -7,6 +7,7 @@
 import Foundation
 
 public actor Braille: OutputContext {
+    public init() {}
     public func submit(job: Output.Job) async throws {
         Loggers.Output.braille.debug("\(job)")
     }
