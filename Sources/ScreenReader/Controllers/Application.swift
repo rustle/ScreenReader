@@ -40,7 +40,9 @@ public actor Application<ObserverType: Observer>: Controller where ObserverType.
     public init(
         element: ElementType,
         output: Output,
-        executor: RunLoopExecutor,
+        // RunLoopExecutor is @unchecked Sendable for now
+        // so we need sending (for now)
+        executor: sending RunLoopExecutor,
         observerFactory: @escaping () async throws -> ApplicationObserver<ObserverType>,
         controllerFactory: @escaping ControllerFactory<ObserverType>
     ) async throws {
