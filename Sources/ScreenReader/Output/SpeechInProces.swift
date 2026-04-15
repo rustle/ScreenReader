@@ -56,9 +56,13 @@ public actor SpeechInProcess: OutputContext {
             case .cancelSpeech:
                 queue.cancel()
                 synth.stopSpeaking(at: isInterrupt ? .immediateBoundary : .wordBoundary)
-            case let .speech(text, _):
-                Loggers.Output.speech.debug("enqueue: \(text)")
-                switch queue.enqueue(text, interrupt: isInterrupt) {
+            case let .speech(text, options):
+                let expanded = options?.contains(.byCharacter) == true
+                    ? CharacterExpander.expand(text)
+                    : text
+                let interrupt = isInterrupt || options?.contains(.interrupt) == true
+                Loggers.Output.speech.debug("enqueue: \(expanded)")
+                switch queue.enqueue(expanded, interrupt: interrupt) {
                 case .speak(let next):
                     Loggers.Output.speech.debug("startSpeaking: \(next)")
                     synth.startSpeaking(next)

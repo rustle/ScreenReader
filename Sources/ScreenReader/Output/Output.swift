@@ -14,7 +14,7 @@ public actor Output: OutputContext {
     public struct Options: OptionSet, Sendable {
         public let rawValue: Int
         public static let interrupt = Options(rawValue: 1 << 0)
-        public static let punctuation = Options(rawValue: 1 << 1)
+        public static let byCharacter = Options(rawValue: 1 << 1)
         public init(rawValue: Int) {
             self.rawValue = rawValue
         }
