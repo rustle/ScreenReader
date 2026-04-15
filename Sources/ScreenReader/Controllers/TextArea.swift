@@ -26,6 +26,15 @@ public actor TextArea<ObserverType: Observer>: Controller where ObserverType.Obs
         Loggers.Controller.textArea
     }
 
+    private var previousCharacterCount: Int = 0
+    private var previousSelectedRange: Range<Int> = 0..<0
+    private var previousLineNumber: Int = 0
+    private var valueDidChangeThisCycle: Bool = false
+
+    private var textBuffer: String = ""
+    private var bufferRange: Range<Int> = 0..<0
+    private let bufferRadius: Int = 128
+
     public init(
         element: ElementType,
         output: AsyncStream<Output.Job>.Continuation,
@@ -75,6 +84,10 @@ public actor TextArea<ObserverType: Observer>: Controller where ObserverType.Obs
         return [.speech(parts.joined(separator: ", "), nil)]
     }
     public func focus() async throws {
+        previousCharacterCount = (try? element.numberOfCharacters()) ?? 0
+        previousSelectedRange = (try? element.selectedTextRange()) ?? 0..<0
+        previousLineNumber = (try? element.line(forIndex: previousSelectedRange.lowerBound)) ?? 0
+        try? refreshBuffer(caret: previousSelectedRange.lowerBound)
         let payloads = try await output(event: .focusIn)
         guard !payloads.isEmpty else { return }
         output.yield(.init(
@@ -83,26 +96,113 @@ public actor TextArea<ObserverType: Observer>: Controller where ObserverType.Obs
             payloads: payloads
         ))
     }
+
     public func stop() async throws {
         guard runState == .running else { return }
         observerTasks = []
         runState = .stopped
     }
+    private func refreshBuffer(caret: Int) throws {
+        let start = max(0, caret - bufferRadius)
+        let end = min(previousCharacterCount, caret + bufferRadius)
+        guard start < end else {
+            textBuffer = ""
+            bufferRange = start..<start
+            return
+        }
+        textBuffer = try element.string(for: start..<end)
+        bufferRange = start..<end
+    }
     private func valueChanged(
         element: ElementType,
         userInfo: [String:ObserverElementInfoValue]?
     ) async {
-        guard let value = (try? element.value()) as? String else { return }
+        defer { valueDidChangeThisCycle = true }
+        guard let newCount = try? element.numberOfCharacters(),
+              let newRange = try? element.selectedTextRange() else { return }
+        let delta = newCount - previousCharacterCount
+        let text: String?
+        if delta > 0 {
+            let insertedRange = max(0, newRange.lowerBound - delta)..<newRange.lowerBound
+            text = try? element.string(for: insertedRange)
+        } else if delta < 0 {
+            let deletedCount = abs(delta)
+            let deletedStart = newRange.lowerBound
+            let deletedEnd = deletedStart + deletedCount
+            let highConfidence = bufferRange.lowerBound <= deletedStart && deletedEnd <= bufferRange.upperBound
+            if highConfidence {
+                let bufferOffset = deletedStart - bufferRange.lowerBound
+                let startIndex = textBuffer.index(textBuffer.startIndex, offsetBy: bufferOffset)
+                let endIndex = textBuffer.index(startIndex, offsetBy: deletedCount)
+                text = String(textBuffer[startIndex..<endIndex])
+            } else {
+                // TODO: Use a sound instead of "deleted"
+                text = "deleted"
+            }
+        } else {
+            text = nil
+        }
+        previousCharacterCount = newCount
+        previousSelectedRange = newRange
+        previousLineNumber = (try? element.line(forIndex: newRange.lowerBound)) ?? previousLineNumber
+        try? refreshBuffer(caret: newRange.lowerBound)
+        guard let text, !text.isEmpty else { return }
         output.yield(.init(
             options: [],
             identifier: "",
-            payloads: [.speech(value, nil)]
+            payloads: [.speech(text, nil)]
         ))
     }
+
     private func selectedTextChanged(
         element: ElementType,
         userInfo: [String:ObserverElementInfoValue]?
     ) async {
+        guard !valueDidChangeThisCycle else {
+            valueDidChangeThisCycle = false
+            return
+        }
+        guard let newRange = try? element.selectedTextRange() else { return }
+        defer {
+            previousSelectedRange = newRange
+            previousLineNumber = (try? element.line(forIndex: newRange.lowerBound)) ?? previousLineNumber
+            try? refreshBuffer(caret: newRange.lowerBound)
+        }
+        if !newRange.isEmpty {
+            guard let selected = try? element.selectedText(), !selected.isEmpty else { return }
+            output.yield(.init(
+                options: [],
+                identifier: "",
+                // TODO: Localization
+                payloads: [.speech("\(selected) selected", nil)]
+            ))
+        } else if newRange.lowerBound != previousSelectedRange.lowerBound {
+            let delta = abs(newRange.lowerBound - previousSelectedRange.lowerBound)
+            let newLine = (try? element.line(forIndex: newRange.lowerBound)) ?? previousLineNumber
+            if delta > 1 && newLine != previousLineNumber {
+                // ↑/↓ navigation: speak the full new line
+                guard let lineRange = try? element.range(forLine: newLine),
+                      let lineText = try? element.string(for: lineRange) else { return }
+                // TODO: Use a sound instead of "blank"
+                let spoken = lineText.trimmingCharacters(in: .newlines).isEmpty ? "blank" : lineText
+                output.yield(.init(
+                    options: [],
+                    identifier: "",
+                    payloads: [.speech(spoken, .interrupt)]
+                ))
+            } else {
+                // Character or word navigation, including Right/Left crossing a line boundary
+                let lo = min(previousSelectedRange.lowerBound, newRange.lowerBound)
+                let hi = max(previousSelectedRange.lowerBound, newRange.lowerBound)
+                guard let jumped = try? element.string(for: lo..<hi), !jumped.isEmpty else { return }
+                let speechOptions: Output.Options = delta == 1 ? [.byCharacter, .interrupt] : .interrupt
+                output.yield(.init(
+                    options: [],
+                    identifier: "",
+                    payloads: [.speech(jumped, speechOptions)]
+                ))
+            }
+        }
     }
 }
 
