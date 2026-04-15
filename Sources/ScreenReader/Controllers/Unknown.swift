@@ -39,7 +39,6 @@ public actor Unknown<ObserverType: Observer>: Controller where ObserverType.Obse
         self.observer = observer
     }
     public func start() async throws {
-        logger.debug("\(self.element)")
         guard runState == .stopped else { return }
 #if DEBUG
         if let element = element as? SystemElement {
@@ -63,7 +62,6 @@ public actor Unknown<ObserverType: Observer>: Controller where ObserverType.Obse
         return [.speech(parts.joined(separator: ", "), nil)]
     }
     public func focus() async throws {
-        logger.debug("\(self.element)")
         let payloads = try await output(event: .focusIn)
         guard !payloads.isEmpty else { return }
         output.yield(.init(
@@ -73,15 +71,6 @@ public actor Unknown<ObserverType: Observer>: Controller where ObserverType.Obse
         ))
     }
     public func stop() async throws {
-#if DEBUG
-        if let cachedDebugInfo = cachedDebugInfo {
-            logger.debug("\(self.element) \(cachedDebugInfo)")
-        } else {
-            logger.debug("\(self.element)")
-        }
-#else
-        logger.debug("\(self.element)")
-#endif // DEBUG
         observerTasks = []
     }
 }

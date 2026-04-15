@@ -37,12 +37,10 @@ public actor Group<ObserverType: Observer>: Controller where ObserverType.Observ
         self.observer = observer
     }
     public func start() async throws {
-        logger.debug("\(self.element)")
         guard runState == .stopped else { return }
         runState = .running
     }
     public func stop() async throws {
-        logger.debug("\(self.element)")
         guard runState == .running else { return }
         observerTasks = []
         runState = .stopped
@@ -56,7 +54,6 @@ public actor Group<ObserverType: Observer>: Controller where ObserverType.Observ
         return []
     }
     public func focus() async throws {
-        logger.debug("\(self.element)")
     }
 }
 

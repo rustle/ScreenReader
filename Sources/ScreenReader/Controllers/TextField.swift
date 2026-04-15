@@ -38,7 +38,6 @@ public actor TextField<ObserverType: Observer>: Controller where ObserverType.Ob
         self.observer = observer
     }
     public func start() async throws {
-        logger.debug("\(self.element)")
         guard runState == .stopped else { return }
         do {
             observerTasks.append(try await add(
@@ -79,7 +78,6 @@ public actor TextField<ObserverType: Observer>: Controller where ObserverType.Ob
         return [.speech(parts.joined(separator: ", "), nil)]
     }
     public func focus() async throws {
-        logger.debug("\(self.element)")
         let payloads = try await output(event: .focusIn)
         guard !payloads.isEmpty else { return }
         output.yield(.init(
@@ -89,7 +87,6 @@ public actor TextField<ObserverType: Observer>: Controller where ObserverType.Ob
         ))
     }
     public func stop() async throws {
-        logger.debug("\(self.element)")
         guard runState == .running else { return }
         observerTasks = []
         runState = .stopped
@@ -98,7 +95,6 @@ public actor TextField<ObserverType: Observer>: Controller where ObserverType.Ob
         element: ElementType,
         userInfo: [String:ObserverElementInfoValue]?
     ) async {
-        logger.debug("\(self.element)")
         guard let value = (try? element.value()) as? String else { return }
         output.yield(.init(
             options: [],
@@ -110,7 +106,6 @@ public actor TextField<ObserverType: Observer>: Controller where ObserverType.Ob
         element: ElementType,
         userInfo: [String:ObserverElementInfoValue]?
     ) async {
-        logger.debug("\(self.element)")
     }
 }
 

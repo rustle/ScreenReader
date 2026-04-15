@@ -37,7 +37,6 @@ public actor List<ObserverType: Observer>: Controller where ObserverType.Observe
         self.observer = observer
     }
     public func start() async throws {
-        logger.debug("\(self.element)")
         guard runState == .stopped else { return }
         do {
             observerTasks.append(try await add(
@@ -56,7 +55,6 @@ public actor List<ObserverType: Observer>: Controller where ObserverType.Observe
         )
     }
     public func stop() async throws {
-        logger.debug("\(self.element)")
         guard runState == .running else { return }
         observerTasks = []
         runState = .stopped
@@ -75,7 +73,6 @@ public actor List<ObserverType: Observer>: Controller where ObserverType.Observe
         return [.speech(parts.joined(separator: ", "), nil)]
     }
     public func focus() async throws {
-        logger.debug("\(self.element)")
         let payloads = try await output(event: .focusIn)
         guard !payloads.isEmpty else { return }
         output.yield(.init(
@@ -88,7 +85,6 @@ public actor List<ObserverType: Observer>: Controller where ObserverType.Observe
         element: ElementType,
         userInfo: [String:ObserverElementInfoValue]?
     ) async {
-        logger.debug("\(self.element)")
         do {
             let selected = try element.selectedChildren()
             let titles = selected

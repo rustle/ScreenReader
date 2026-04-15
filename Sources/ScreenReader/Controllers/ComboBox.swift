@@ -37,7 +37,6 @@ public actor ComboBox<ObserverType: Observer>: Controller where ObserverType.Obs
         self.observer = observer
     }
     public func start() async throws {
-        //logger.debug("\(self.element)")
         guard runState == .stopped else { return }
         runState = .running
     }
@@ -58,7 +57,6 @@ public actor ComboBox<ObserverType: Observer>: Controller where ObserverType.Obs
         return [.speech(parts.joined(separator: ", "), nil)]
     }
     public func focus() async throws {
-        //logger.debug("\(self.element)")
         let payloads = try await output(event: .focusIn)
         guard !payloads.isEmpty else { return }
         output.yield(.init(
@@ -68,7 +66,6 @@ public actor ComboBox<ObserverType: Observer>: Controller where ObserverType.Obs
         ))
     }
     public func stop() async throws {
-        //logger.debug("\(self.element)")
         guard runState == .running else { return }
         observerTasks = []
         runState = .stopped

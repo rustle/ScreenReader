@@ -54,7 +54,6 @@ public actor Application<ObserverType: Observer>: Controller where ObserverType.
             .makeStream(bufferingPolicy: .bufferingNewest(1))
     }
     public func start() async throws {
-        logger.debug("\(self.element)")
         guard runState == .stopped else { return }
         do {
             try element.setEnhancedUserInterface(true)
@@ -144,7 +143,6 @@ public actor Application<ObserverType: Observer>: Controller where ObserverType.
         }
     }
     public func stop() async throws {
-        logger.debug("\(self.element)")
         guard runState == .running else { return }
         guard let observer = observer else { return }
         try await observer.stop()
@@ -187,7 +185,6 @@ public actor Application<ObserverType: Observer>: Controller where ObserverType.
         }
     }
     public func focus() async throws {
-        logger.debug("\(self.element)")
         guard let hierarchy else { return }
         do {
             let focusedUIElement = try element.focusedUIElement()

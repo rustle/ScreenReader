@@ -37,12 +37,10 @@ public actor Window<ObserverType: Observer>: Controller where ObserverType.Obser
         self.observer = observer
     }
     public func start() async throws {
-        logger.debug("\(self.element)")
         guard runState == .stopped else { return }
         runState = .running
     }
     public func stop() async throws {
-        logger.debug("\(self.element)")
         guard runState == .running else { return }
         observerTasks = []
         runState = .stopped
@@ -61,7 +59,6 @@ public actor Window<ObserverType: Observer>: Controller where ObserverType.Obser
         return [.speech(parts.joined(separator: ", "), nil)]
     }
     public func focus() async throws {
-        logger.debug("\(self.element)")
         let payloads = try await output(event: .focusIn)
         guard !payloads.isEmpty else { return }
         output.yield(.init(

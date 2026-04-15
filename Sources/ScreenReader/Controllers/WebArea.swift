@@ -38,7 +38,6 @@ public actor WebArea<ObserverType: Observer>: Controller where ObserverType.Obse
         self.observer = observer
     }
     public func start() async throws {
-        logger.debug("\(self.element)")
         guard runState == .stopped else { return }
         do {
             observerTasks.append(try await add(
@@ -52,7 +51,6 @@ public actor WebArea<ObserverType: Observer>: Controller where ObserverType.Obse
         }
     }
     public func stop() async throws {
-        logger.debug("\(self.element)")
         observerTasks = []
     }
     public func output(event: ControllerOutputEvent) async throws -> [Output.Job.Payload] {
@@ -62,7 +60,6 @@ public actor WebArea<ObserverType: Observer>: Controller where ObserverType.Obse
         return []
     }
     public func focus() async throws {
-        logger.debug("\(self.element)")
         let payloads = try await output(event: .focusIn)
         guard !payloads.isEmpty else { return }
         output.yield(.init(

@@ -38,7 +38,6 @@ public actor Table<ObserverType: Observer>: Controller where ObserverType.Observ
         self.observer = observer
     }
     public func start() async throws {
-        logger.debug("\(self.element)")
         guard runState == .stopped else { return }
         try await _add(
             notification: .selectedRowsChanged,
@@ -83,7 +82,6 @@ public actor Table<ObserverType: Observer>: Controller where ObserverType.Observ
         return [.speech(parts.joined(separator: ", "), nil)]
     }
     public func focus() async throws {
-        logger.debug("\(self.element)")
         let payloads = try await output(event: .focusIn)
         guard !payloads.isEmpty else {
             return
@@ -95,7 +93,6 @@ public actor Table<ObserverType: Observer>: Controller where ObserverType.Observ
         ))
     }
     public func stop() async throws {
-        logger.debug("\(self.element)")
         guard runState == .running else { return }
         observerTasks = []
         runState = .stopped
@@ -104,7 +101,6 @@ public actor Table<ObserverType: Observer>: Controller where ObserverType.Observ
         element: ElementType,
         userInfo: [String:ObserverElementInfoValue]?
     ) async {
-        logger.debug("\(self.element)")
         do {
             let cells = try element.selectedCells()
             let titles = cells.compactMap { try? $0.title() }.filter { !$0.isEmpty }
