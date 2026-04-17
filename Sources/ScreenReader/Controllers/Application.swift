@@ -143,6 +143,7 @@ public actor Application<ObserverType: Observer>: Controller where ObserverType.
         } catch {
             logger.error("\(error.localizedDescription)")
         }
+        runState = .running
     }
     public func stop() async throws {
         guard runState == .running else { return }
