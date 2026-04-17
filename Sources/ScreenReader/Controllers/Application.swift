@@ -295,7 +295,14 @@ extension Application where ObserverType == SystemObserver {
             element: try .application(processIdentifier: processIdentifier),
             output: output,
             executor: executor,
-            observerFactory: { .init(observer: try .init(processIdentifier: processIdentifier, executor: executor)) },
+            observerFactory: {
+                .init(
+                    observer: try .init(
+                        processIdentifier: processIdentifier,
+                        executor: executor
+                    )
+                )
+            },
             controllerFactory: { element, output, observer in
                 try await Application.controller(
                     element: element,
