@@ -25,12 +25,15 @@ public protocol Controller: Actor {
     /// Returns Output payloads that describe this element as context for a child gaining focus.
     /// Used for intermediate nodes in the focus chain (window titles, group labels, etc.).
     func output(event: ControllerOutputEvent) async throws -> [Output.Job.Payload]
+    /// Called by ControllerHierarchy when this controller's parent in the hierarchy changes.
+    func setParent(_ controller: (any Controller)?) async
 }
 
 extension Controller {
     public func focus() async throws {}
     public func unfocus() async throws {}
     public func output(event: ControllerOutputEvent) async throws -> [Output.Job.Payload] { [] }
+    public func setParent(_ controller: (any Controller)?) async {}
 }
 
 enum ControllerObserverError: Error {

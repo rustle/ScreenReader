@@ -22,6 +22,8 @@ public actor TextArea<ObserverType: Observer>: Controller where ObserverType.Obs
     private var observerTasks: [Task<Void, any Error>] = []
     private var runState: RunState = .stopped
     private let output: AsyncStream<Output.Job>.Continuation
+    /// The controller for this element's parent in the controller hierarchy.
+    weak private var parentController: (any Controller)?
     private var logger: Logger {
         Loggers.Controller.textArea
     }
@@ -46,6 +48,11 @@ public actor TextArea<ObserverType: Observer>: Controller where ObserverType.Obs
         self.output = output
         self.observer = observer
     }
+
+    public func setParent(_ controller: (any Controller)?) async {
+        parentController = controller
+    }
+
     public func start() async throws {
         guard runState == .stopped else { return }
         do {

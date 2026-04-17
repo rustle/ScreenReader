@@ -112,6 +112,7 @@ public actor ControllerHierarchy<ObserverType: AccessibilityElement.Observer> wh
             if childNode.parent !== parentNode {
                 childNode.parent = parentNode
                 parentNode.children[childNode.element] = childNode
+                await childNode.controller.setParent(parentNode.controller)
             }
         }
 
@@ -197,6 +198,11 @@ public actor ControllerHierarchy<ObserverType: AccessibilityElement.Observer> wh
             element: element,
             output: output
         ).controller
+    }
+
+    /// Returns the controller for the parent of `element`, if one exists in the hierarchy.
+    func parentController(for element: ElementType) -> (any Controller)? {
+        nodes[element]?.parent?.controller
     }
 
     private func getOrCreateNode(
