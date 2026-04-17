@@ -6,6 +6,7 @@
 
 import AccessibilityElement
 import Foundation
+import os
 
 public enum ServerError: Error {
     case application(ApplicationError)
@@ -44,5 +45,37 @@ public actor Server {
         } catch {
             throw error
         }
+    }
+
+    public func yield() async throws {
+        try await Yield().yield()
+    }
+}
+
+private final class Yield: Sendable {
+    private let state = OSAllocatedUnfairLock<CheckedContinuation<Void, Error>?>(uncheckedState: nil)
+    func yield() async throws {
+        try await withTaskCancellationHandler {
+            try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+                guard !Task.isCancelled else {
+                    continuation.resume(throwing: CancellationError())
+                    return
+                }
+                state.withLock {
+                    $0 = continuation
+                }
+            }
+        } onCancel: {
+            cancelYieldIfNeeded()
+        }
+    }
+
+    private func cancelYieldIfNeeded() {
+        let continuation = state.withLock {
+            let continuation = $0
+            $0 = nil
+            return continuation
+        }
+        continuation?.resume(throwing: CancellationError())
     }
 }

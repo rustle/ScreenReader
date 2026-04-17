@@ -80,9 +80,9 @@ extension ScreenReader {
                         processIdentifier: key.processIdentifier,
                         bundleIdentifier: key.bundleIdentifier,
                         output: output
-                    ) { _ in
+                    ) { server, _ in
                         // Suspend until the task is cancelled (app removed).
-                        try await Task.sleep(nanoseconds: .max)
+                        try await server.yield()
                     }
                 } catch is CancellationError {
                     // Normal shutdown via task cancellation — no action needed.

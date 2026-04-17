@@ -30,7 +30,8 @@ public actor ServerProvider {
         processIdentifier: pid_t,
         bundleIdentifier: BundleIdentifier,
         output: Output,
-        _ body: @Sendable (Server) async throws -> Void
+        @_inheritActorContext _ body: @Sendable (Server, isolated (any Actor)?) async throws -> Void,
+        _ isolation: (any Actor)? = #isolation
     ) async throws {
         guard processIdentifier != getpid() else {
             throw ServerProviderError.ignored
@@ -55,7 +56,7 @@ public actor ServerProvider {
             )
             try await server.start()
             do {
-                try await body(server)
+                try await body(server, isolation)
             } catch {
                 try? await server.stop()
                 throw error
