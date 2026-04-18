@@ -47,6 +47,10 @@ public actor Server {
         }
     }
 
+    public func dispatch(command: ScreenReaderCommand) async {
+        await application.dispatch(command: command)
+    }
+
     public func yield() async throws {
         try await Yield().yield()
     }

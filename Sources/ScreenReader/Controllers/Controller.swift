@@ -27,6 +27,8 @@ public protocol Controller: Actor {
     func output(event: ControllerOutputEvent) async throws -> [Output.Job.Payload]
     /// Called by ControllerHierarchy when this controller's parent in the hierarchy changes.
     func setParent(_ controller: (any Controller)?) async
+    /// Dispatch a screen reader command to this controller.
+    func dispatch(command: ScreenReaderCommand) async
 }
 
 extension Controller {
@@ -34,6 +36,7 @@ extension Controller {
     public func unfocus() async throws {}
     public func output(event: ControllerOutputEvent) async throws -> [Output.Job.Payload] { [] }
     public func setParent(_ controller: (any Controller)?) async {}
+    public func dispatch(command: ScreenReaderCommand) async {}
 }
 
 enum ControllerObserverError: Error {

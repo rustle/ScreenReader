@@ -188,6 +188,55 @@ public actor ControllerHierarchy<ObserverType: AccessibilityElement.Observer> wh
         }
     }
 
+    // MARK: - Command dispatch
+
+    /// Routes a command to the appropriate controller.
+    ///
+    /// Tree-navigation commands are handled here using the current focus path.
+    /// All other commands are forwarded to the leaf controller.
+    func dispatch(
+        command: ScreenReaderCommand,
+        bufferedOutput: AsyncStream<Output.Job>.Continuation,
+        directOutput: any OutputContext
+    ) async {
+        switch command {
+        case .navigateOut:
+            guard let leaf = focusPath.last,
+                  let parent = leaf.parent else { return }
+            do {
+                try await self.focus(
+                    application: application.element,
+                    element: parent.element,
+                    bufferedOutput: bufferedOutput,
+                    directOutput: directOutput
+                )
+            } catch {
+                logger.error("navigateOut: \(error.localizedDescription)")
+            }
+        case .navigateIn:
+            guard let leaf = focusPath.last,
+                  let firstChild = leaf.children.values.first else { return }
+            do {
+                try await self.focus(
+                    application: application.element,
+                    element: firstChild.element,
+                    bufferedOutput: bufferedOutput,
+                    directOutput: directOutput
+                )
+            } catch {
+                logger.error("navigateIn: \(error.localizedDescription)")
+            }
+        case .navigateNext, .navigatePrevious:
+            // Sibling navigation requires knowing the parent's child order from AX;
+            // deferred until Element gains children()/indexOf() support.
+            break
+        default:
+            if let leaf = focusPath.last {
+                await leaf.controller.dispatch(command: command)
+            }
+        }
+    }
+
     // MARK: - Controller access
 
     /// Returns the controller for an element, creating it (and registering for

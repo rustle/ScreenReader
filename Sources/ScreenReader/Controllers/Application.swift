@@ -202,6 +202,17 @@ public actor Application<ObserverType: Observer>: Controller where ObserverType.
             logger.error("\(error.localizedDescription)")
         }
     }
+
+    public func dispatch(command: ScreenReaderCommand) async {
+        guard let hierarchy else {
+            return
+        }
+        await hierarchy.dispatch(
+            command: command,
+            bufferedOutput: jobsContinuation,
+            directOutput: output
+        )
+    }
 }
 
 extension Application {

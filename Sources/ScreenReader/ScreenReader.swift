@@ -21,12 +21,19 @@ public actor ScreenReader {
     // Each entry is a Task that runs withServer for the app's lifetime.
     // Cancelling the task stops the server and releases its executor.
     private var runningApplicationTasks: [RunningApplication: Task<Void, Never>] = [:]
+    // Live servers keyed by PID for fast command dispatch.
+    private var serversByProcessIdentifier: [pid_t: Server] = [:]
+    // Process Identifier accessibility is/should be focused on
+    // We don't update this (yet) but need it for dispatch scaffolding
+    private var focusedProcessIdentifier: pid_t = 0
+
     public init(dependencies: Dependencies) {
         let screenReaderDeps = dependencies.screenReaderDependenciesFactory()
         self.dependencies = screenReaderDeps
         self.output = Output(contexts: screenReaderDeps.outputContextsFactory())
         serverProvider = ServerProvider(dependencies: dependencies.serverProviderDependenciesFactory())
     }
+
     public func confirmTrust() {
         guard dependencies.isTrusted(true) else {
             // If you already added ScreenReader
@@ -39,6 +46,7 @@ public actor ScreenReader {
             exit(1)
         }
     }
+
     public func start() async throws {
         runningApplicationsTask?.cancel()
         let runningApplications = try await dependencies.runningApplicationsFactory()
@@ -50,9 +58,17 @@ public actor ScreenReader {
             )
         self.runningApplications = runningApplications
     }
+
     public func stop() async throws {
         runningApplicationsTask?.cancel()
         runningApplicationsTask = nil
+    }
+
+    public func dispatchCommand(_ command: ScreenReaderCommand) async {
+        guard let server = serversByProcessIdentifier[focusedProcessIdentifier] else {
+            return
+        }
+        await server.dispatch(command: command)
     }
 }
 
@@ -72,17 +88,31 @@ extension ScreenReader {
             await add(applications: applications)
         }
     }
+
     private func add(applications: [RunningApplication]) async {
         for key in applications {
-            let task = Task { [serverProvider, output] in
+            let task = Task { [serverProvider, output, self] in
                 do {
                     try await serverProvider.withServer(
                         processIdentifier: key.processIdentifier,
                         bundleIdentifier: key.bundleIdentifier,
                         output: output
                     ) { server, _ in
-                        // Suspend until the task is cancelled (app removed).
-                        try await server.yield()
+                        // The _ above is this actor's isolation context.
+                        // The outer await Task {} enforces that isolation
+                        // and lets us stash and cleanup our server for lookup
+                        // by dispatch without extending the server instances
+                        // lifetime beyond the `withServer` body
+                        try await Task {
+                            serversByProcessIdentifier[key.processIdentifier] = server
+                            defer {
+                                Task {
+                                    serversByProcessIdentifier.removeValue(forKey: key.processIdentifier)
+                                }
+                            }
+                            // Suspend until the task is cancelled (app removed).
+                            try await server.yield()
+                        }.value
                     }
                 } catch is CancellationError {
                     // Normal shutdown via task cancellation — no action needed.
@@ -96,6 +126,7 @@ extension ScreenReader {
             runningApplicationTasks[key] = task
         }
     }
+
     private func remove(applications: [RunningApplication]) async {
         for key in applications {
             if let task = runningApplicationTasks.removeValue(forKey: RunningApplication(
