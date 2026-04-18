@@ -1,7 +1,7 @@
 //
 //  WebArea.swift
 //
-//  Copyright © 2017-2023 Doug Russell. All rights reserved.
+//  Copyright © 2017-2026 Doug Russell. All rights reserved.
 //
 
 import AccessibilityElement
@@ -16,6 +16,7 @@ public actor WebArea<ObserverType: Observer>: Controller where ObserverType.Obse
         element
     }
 
+    public nonisolated let unownedExecutor: UnownedSerialExecutor
     let observer: ApplicationObserver<ObserverType>
 
     private var observerTasks: [Task<Void, any Error>] = []
@@ -28,8 +29,10 @@ public actor WebArea<ObserverType: Observer>: Controller where ObserverType.Obse
     public init(
         element: ElementType,
         output: AsyncStream<Output.Job>.Continuation,
-        observer: ApplicationObserver<ObserverType>
+        observer: ApplicationObserver<ObserverType>,
+        executor: RunLoopExecutor
     ) async throws {
+        self.unownedExecutor = executor.asUnownedSerialExecutor()
         self.element = element
         self.output = output
         self.observer = observer
@@ -40,7 +43,7 @@ public actor WebArea<ObserverType: Observer>: Controller where ObserverType.Obse
         do {
             observerTasks.append(try await add(
                 notification: .selectedTextChanged,
-                handler: target(uncheckedAction: WebArea<ObserverType>.selectedTextChanged)
+                handler: target(action: WebArea<ObserverType>.selectedTextChanged)
             ))
         } catch let error as ControllerObserverError {
             logger.info("\(error.localizedDescription)")
@@ -52,12 +55,28 @@ public actor WebArea<ObserverType: Observer>: Controller where ObserverType.Obse
         logger.debug("\(self.element)")
         observerTasks = []
     }
+    private func output() async throws -> [Output.Job.Payload] {
+        if let roleDescription = try? element.roleDescription() {
+            return [
+                .speech(roleDescription, nil)
+            ]
+        }
+        return []
+    }
     public func focus() async throws {
+        logger.debug("\(self.element)")
+        let payloads = try await output()
+        guard !payloads.isEmpty else { return }
+        output.yield(.init(
+            options: [],
+            identifier: "",
+            payloads: payloads
+        ))
     }
     @Sendable
     private func selectedTextChanged(
         element: ElementType,
-        userInfo: [String:Sendable]?
+        userInfo: [String:ObserverElementInfoValue]?
     ) async {
         logger.debug("\(element) \(String(describing: userInfo))")
     }

@@ -1,7 +1,7 @@
 //
 //  BundleIdentifier.swift
 //
-//  Copyright © 2017-2022 Doug Russell. All rights reserved.
+//  Copyright © 2017-2026 Doug Russell. All rights reserved.
 //
 
 public struct BundleIdentifier: Sendable, RawRepresentable, CustomStringConvertible {
@@ -27,7 +27,7 @@ public struct BundleIdentifier: Sendable, RawRepresentable, CustomStringConverti
 extension BundleIdentifier: ExpressibleByStringLiteral {
     public typealias StringLiteralType = String
     public init(stringLiteral value: StringLiteralType) {
-        self.init(rawValue: value)!
+        self.rawValue = value.lowercased()
     }
 }
 

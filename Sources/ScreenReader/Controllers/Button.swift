@@ -1,7 +1,7 @@
 //
 //  Button.swift
 //
-//  Copyright © 2017-2023 Doug Russell. All rights reserved.
+//  Copyright © 2017-2026 Doug Russell. All rights reserved.
 //
 
 import AccessibilityElement
@@ -15,6 +15,7 @@ public actor Button<ObserverType: Observer>: Controller where ObserverType.Obser
         element
     }
 
+    public nonisolated let unownedExecutor: UnownedSerialExecutor
     let observer: ApplicationObserver<ObserverType>
 
     private var observerTasks: [Task<Void, any Error>] = []
@@ -27,8 +28,10 @@ public actor Button<ObserverType: Observer>: Controller where ObserverType.Obser
     public init(
         element: ElementType,
         output: AsyncStream<Output.Job>.Continuation,
-        observer: ApplicationObserver<ObserverType>
+        observer: ApplicationObserver<ObserverType>,
+        executor: RunLoopExecutor
     ) async throws {
+        self.unownedExecutor = executor.asUnownedSerialExecutor()
         self.element = element
         self.output = output
         self.observer = observer
@@ -39,7 +42,7 @@ public actor Button<ObserverType: Observer>: Controller where ObserverType.Obser
         do {
             observerTasks.append(try await add(
                 notification: .valueChanged,
-                handler: target(uncheckedAction: Button<ObserverType>.valueChanged)
+                handler: target(action: Button<ObserverType>.valueChanged)
             ))
         } catch let error as ControllerObserverError {
             logger.info("\(error.localizedDescription)")
@@ -48,8 +51,28 @@ public actor Button<ObserverType: Observer>: Controller where ObserverType.Obser
         }
         runState = .running
     }
+    private func output() async throws -> [Output.Job.Payload] {
+        var parts = [String]()
+        if let title = try? element.title(), !title.isEmpty {
+            parts.append(title)
+        } else if let titleUIElement = try? element.titleUIElement(), let title = try? titleUIElement.title(), !title.isEmpty {
+            parts.append(title)
+        }
+        if let roleDescription = try? element.roleDescription() {
+            parts.append(roleDescription)
+        }
+        guard !parts.isEmpty else { return [] }
+        return [.speech(parts.joined(separator: ", "), nil)]
+    }
     public func focus() async throws {
         logger.debug("\(self.element)")
+        let payloads = try await output()
+        guard !payloads.isEmpty else { return }
+        output.yield(.init(
+            options: [],
+            identifier: "",
+            payloads: payloads
+        ))
     }
     public func stop() async throws {
         logger.debug("\(self.element)")
@@ -59,9 +82,17 @@ public actor Button<ObserverType: Observer>: Controller where ObserverType.Obser
     }
     private func valueChanged(
         element: ElementType,
-        userInfo: [String:Sendable]?
+        userInfo: [String:ObserverElementInfoValue]?
     ) async {
         logger.debug("\(element)")
+        guard let value = (try? element.value()) as? String, !value.isEmpty else { return }
+        output.yield(.init(
+            options: [],
+            identifier: "",
+            payloads: [.speech(value, nil)]
+        ))
+    }
+    public func activate() async throws {
     }
 }
 

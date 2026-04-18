@@ -1,7 +1,7 @@
 //
 //  Application.swift
 //
-//  Copyright © 2017-2023 Doug Russell. All rights reserved.
+//  Copyright © 2017-2026 Doug Russell. All rights reserved.
 //
 
 import AccessibilityElement
@@ -19,6 +19,8 @@ public actor Application<ObserverType: Observer>: Controller where ObserverType.
         element
     }
 
+    public nonisolated let unownedExecutor: UnownedSerialExecutor
+
     private var runState: RunState = .stopped
     private var observer: ApplicationObserver<ObserverType>?
     private var observerTasks: [Task<Void, any Error>] = []
@@ -30,6 +32,7 @@ public actor Application<ObserverType: Observer>: Controller where ObserverType.
     private let jobs: AsyncStream<Output.Job>
     private let jobsContinuation: AsyncStream<Output.Job>.Continuation
     private var jobsTask: Task<Void, any Error>?
+    nonisolated let executor: RunLoopExecutor
     private var logger: Logger {
         Loggers.Controller.application
     }
@@ -37,9 +40,12 @@ public actor Application<ObserverType: Observer>: Controller where ObserverType.
     public init(
         element: ElementType,
         output: Output,
+        executor: RunLoopExecutor,
         observerFactory: @escaping () async throws -> ApplicationObserver<ObserverType>,
         controllerFactory: @escaping ControllerFactory<ObserverType>
     ) async throws {
+        self.unownedExecutor = executor.asUnownedSerialExecutor()
+        self.executor = executor
         self.element = element
         self.output = output
         self.observerFactory = observerFactory
@@ -57,14 +63,15 @@ public actor Application<ObserverType: Observer>: Controller where ObserverType.
         } catch {
             logger.info("Error Setting Enhanced User Interface For \(self.element.debugDescription) \(error.localizedDescription)")
         }
-        let observer:ApplicationObserver<ObserverType>
+        let observer: ApplicationObserver<ObserverType>
         let hierarchy: ControllerHierarchy<ObserverType>
         do {
             observer = try await observerFactory()
             hierarchy = try await ControllerHierarchy(
                 application: self,
                 observer: observer,
-                controllerFactory: controllerFactory
+                controllerFactory: controllerFactory,
+                executor: executor
             )
             try await observer.start()
         } catch let error as ObserverError {
@@ -79,7 +86,7 @@ public actor Application<ObserverType: Observer>: Controller where ObserverType.
                 observer: observer,
                 element: element,
                 notification: .windowCreated,
-                handler: target(uncheckedAction: Application.windowCreated)
+                handler: target(action: Application.windowCreated)
             ))
         } catch let error as ControllerObserverError {
             logger.debug("\(error.localizedDescription)")
@@ -91,7 +98,19 @@ public actor Application<ObserverType: Observer>: Controller where ObserverType.
                 observer: observer,
                 element: element,
                 notification: .focusedWindowChanged,
-                handler: target(uncheckedAction: Application.focusedWindowChanged)
+                handler: target(action: Application.focusedWindowChanged)
+            ))
+        } catch let error as ControllerObserverError {
+            logger.debug("\(error.localizedDescription)")
+        } catch {
+            logger.error("\(error.localizedDescription)")
+        }
+        do {
+            observerTasks.append(try await Self.add(
+                observer: observer,
+                element: element,
+                notification: .focusedUIElementChanged,
+                handler: target(action: Application.focusedUIElementChanged)
             ))
         } catch let error as ControllerObserverError {
             logger.debug("\(error.localizedDescription)")
@@ -102,15 +121,14 @@ public actor Application<ObserverType: Observer>: Controller where ObserverType.
             do {
                 try await hierarchy.controller(
                     element: window,
-                    output: jobsContinuation,
-                    observer: observer
+                    output: jobsContinuation
                 )
             } catch {
                 logger.error("\(error.localizedDescription)")
             }
         }
         precondition(jobsTask == nil)
-        jobsTask = Task(priority: .userInitiated) {
+        jobsTask = Task(priority: .medium) {
             for await job in jobs {
                 try await output.submit(job: job)
             }
@@ -137,7 +155,7 @@ public actor Application<ObserverType: Observer>: Controller where ObserverType.
     }
     private func windowCreated(
         window: ElementType,
-        userInfo: [String:Sendable]?
+        userInfo: [String:ObserverElementInfoValue]?
     ) async {
         logger.debug("\(window)")
         do {
@@ -148,7 +166,7 @@ public actor Application<ObserverType: Observer>: Controller where ObserverType.
     }
     private func focusedWindowChanged(
         element: ElementType,
-        userInfo: [String:Sendable]?
+        userInfo: [String:ObserverElementInfoValue]?
     ) async {
         logger.debug("\(element)")
         do {
@@ -159,7 +177,7 @@ public actor Application<ObserverType: Observer>: Controller where ObserverType.
     }
     private func focusedUIElementChanged(
         element: ElementType,
-        userInfo: [String:Sendable]?
+        userInfo: [String:ObserverElementInfoValue]?
     ) async {
         logger.debug("\(element.description)")
         do {
@@ -170,17 +188,14 @@ public actor Application<ObserverType: Observer>: Controller where ObserverType.
     }
     public func focus() async throws {
         logger.debug("\(self.element)")
-        guard let observer else { return }
         guard let hierarchy else { return }
         do {
             let focusedUIElement = try element.focusedUIElement()
             focus = try await hierarchy.focus(
                 application: element,
                 element: focusedUIElement,
-                output: jobsContinuation,
-                observer: observer
+                output: jobsContinuation
             )
-            try await focus.last?.focus()
         } catch {
             logger.error("\(error.localizedDescription)")
         }
@@ -192,68 +207,79 @@ extension Application {
     fileprivate static func controller(
         element: ElementType,
         output: AsyncStream<Output.Job>.Continuation,
-        observer: ApplicationObserver<ObserverType>
+        observer: ApplicationObserver<ObserverType>,
+        executor: RunLoopExecutor
     ) async throws -> Controller {
         switch try element.role() {
         case .button:
             try await Button(
                 element: element,
                 output: output,
-                observer: observer
+                observer: observer,
+                executor: executor
             )
         case .comboBox:
             try await ComboBox(
                 element: element,
                 output: output,
-                observer: observer
+                observer: observer,
+                executor: executor
             )
         case .group:
             try await Group(
                 element: element,
                 output: output,
-                observer: observer
+                observer: observer,
+                executor: executor
             )
         case .list:
             try await List(
                 element: element,
                 output: output,
-                observer: observer
+                observer: observer,
+                executor: executor
             )
         case .table:
             try await Table(
                 element: element,
                 output: output,
-                observer: observer
+                observer: observer,
+                executor: executor
             )
         case .textField:
             try await TextField(
                 element: element,
                 output: output,
-                observer: observer
+                observer: observer,
+                executor: executor
             )
         case .textArea:
             try await TextArea(
                 element: element,
                 output: output,
-                observer: observer
+                observer: observer,
+                executor: executor
             )
         case .webArea:
             try await WebArea(
                 element: element,
                 output: output,
-                observer: observer
+                observer: observer,
+                executor: executor
             )
         case .window:
             try await Window(
                 element: element,
                 output: output,
-                observer: observer
+                observer: observer,
+                executor: executor
             )
         default:
             try await Unknown(
                 element: element,
                 output: output,
-                observer: observer
+                observer: observer,
+                executor: executor
             )
         }
     }
@@ -262,13 +288,22 @@ extension Application {
 extension Application where ObserverType == SystemObserver {
     public init(
         processIdentifier: pid_t,
-        output: Output
+        output: Output,
+        executor: RunLoopExecutor
     ) async throws {
         try await self.init(
             element: try .application(processIdentifier: processIdentifier),
             output: output,
-            observerFactory: { .init(observer: try .init(processIdentifier: processIdentifier)) },
-            controllerFactory: Application.controller(element:output:observer:)
+            executor: executor,
+            observerFactory: { .init(observer: try .init(processIdentifier: processIdentifier, executor: executor)) },
+            controllerFactory: { element, output, observer in
+                try await Application.controller(
+                    element: element,
+                    output: output,
+                    observer: observer,
+                    executor: executor
+                )
+            }
         )
     }
 }

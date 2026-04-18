@@ -1,21 +1,26 @@
 //
 //  Controller.swift
 //
-//  Copyright © 2017-2023 Doug Russell. All rights reserved.
+//  Copyright © 2017-2026 Doug Russell. All rights reserved.
 //
 
 import AccessibilityElement
 import Cocoa
+import os
 
 public protocol Controller: Actor {
     var identifier: AnyHashable { get async }
     func start() async throws
     func stop() async throws
+    /// Called when this controller becomes the focused leaf of the focus chain.
     func focus() async throws
+    /// Called when this controller leaves the focus chain (but its element still exists).
+    func unfocus() async throws
 }
 
 extension Controller {
     public func focus() async throws {}
+    public func unfocus() async throws {}
 }
 
 enum ControllerObserverError: Error {
@@ -54,7 +59,7 @@ extension Controller {
         observer: ApplicationObserver<ObserverType>,
         element: ObserverType.ObserverElement,
         notification: NSAccessibility.Notification,
-        handler: @escaping @Sendable (ObserverType.ObserverElement, [String:Sendable]?) async -> Void
+        handler: @escaping @Sendable (ObserverType.ObserverElement, [String:ObserverElementInfoValue]?) async -> Void
     ) async throws -> Task<Void, any Error> {
         do {
             let stream = try await observer.stream(
@@ -62,11 +67,15 @@ extension Controller {
                 notification: notification
             )
             return Task(priority: .userInitiated) {
-                for try await notification in stream {
-                    await handler(
-                        notification.element,
-                        notification.info
-                    )
+                do {
+                    for try await notification in stream {
+                        await handler(
+                            notification.element,
+                            notification.info
+                        )
+                    }
+                } catch {
+                    Loggers.Controller.observer.error("stream error element=\(element.description) notification=\(notification.rawValue) error=\(error.localizedDescription)")
                 }
             }
         } catch let error as ObserverError {
@@ -78,6 +87,15 @@ extension Controller {
             case .invalidUIElement:
                 throw ControllerObserverError.invalidUIElement
             case .cannotComplete:
+#if DEBUG
+                if let sysElement = element as? SystemElement {
+                    Loggers.Controller.observer.error("cannotComplete element=\(sysElement.debugInfo) notification=\(notification.rawValue)")
+                } else {
+                    Loggers.Controller.observer.error("cannotComplete element=\(element.description) notification=\(notification.rawValue)")
+                }
+#else
+                Loggers.Controller.observer.error("cannotComplete element=\(element.description) notification=\(notification.rawValue)")
+#endif
                 throw ControllerObserverError.cannotComplete
             default:
                 throw error

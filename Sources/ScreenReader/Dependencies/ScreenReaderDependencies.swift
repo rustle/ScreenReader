@@ -1,11 +1,10 @@
 //
 //  ScreenReaderDependencies.swift
 //  
-//  Copyright © 2017-2022 Doug Russell. All rights reserved.
+//  Copyright © 2017-2026 Doug Russell. All rights reserved.
 //
 
 import Foundation
-import os
 
 public struct ScreenReaderDependencies: Sendable {
     public let isTrusted: @Sendable (Bool) -> Bool

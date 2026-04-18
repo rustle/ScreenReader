@@ -1,7 +1,7 @@
 //
 //  Server.swift
 //
-//  Copyright © 2017-2022 Doug Russell. All rights reserved.
+//  Copyright © 2017-2026 Doug Russell. All rights reserved.
 //
 
 import AccessibilityElement
@@ -15,15 +15,17 @@ public actor Server {
     public let processIdentifier: pid_t
     public let bundleIdentifier: BundleIdentifier
     private let application: Controller
+
     public init(
         processIdentifier: pid_t,
         bundleIdentifier: BundleIdentifier,
         application: Controller
-    ) async throws {
+    ) {
         self.processIdentifier = processIdentifier
         self.bundleIdentifier = bundleIdentifier
         self.application = application
     }
+
     public func start() async throws {
         do {
             try await application.start()
@@ -33,6 +35,7 @@ public actor Server {
             throw error
         }
     }
+
     public func stop() async throws {
         do {
             try await application.stop()
@@ -41,22 +44,5 @@ public actor Server {
         } catch {
             throw error
         }
-    }
-}
-
-extension Server {
-    public init(
-        processIdentifier: pid_t,
-        bundleIdentifier: BundleIdentifier,
-        output: Output
-    ) async throws {
-        try await self.init(
-            processIdentifier: processIdentifier,
-            bundleIdentifier: bundleIdentifier,
-            application: try await Application(
-                processIdentifier: processIdentifier,
-                output: output
-            )
-        )
     }
 }

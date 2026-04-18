@@ -1,7 +1,7 @@
 //
 //  ServerProvider.swift
 //
-//  Copyright © 2017-2022 Doug Russell. All rights reserved.
+//  Copyright © 2017-2026 Doug Russell. All rights reserved.
 //
 
 import Foundation
@@ -15,17 +15,23 @@ public actor ServerProvider {
     private let exclusionList: Set<BundleIdentifier>
     private let inclusionList: Set<BundleIdentifier>
     private let logger: Logger
+    private let pool = AppExecutorPool()
+
     public init(dependencies: ServerProviderDependencies) {
         logger = dependencies.logger
         exclusionList = dependencies.exclusionListFactory()
         inclusionList = dependencies.inclusionListFactory()
     }
-    public func connect(
+
+    /// Acquires a RunLoopExecutor, creates and starts a Server, calls `body`,
+    /// then stops the Server and releases the executor — even if `body` throws
+    /// or the task is cancelled.
+    public func withServer(
         processIdentifier: pid_t,
         bundleIdentifier: BundleIdentifier,
         output: Output,
-        updateFocusOnConnect: Bool = false
-    ) async throws -> Server {
+        _ body: @Sendable (Server) async throws -> Void
+    ) async throws {
         guard processIdentifier != getpid() else {
             throw ServerProviderError.ignored
         }
@@ -35,11 +41,26 @@ public actor ServerProvider {
         if !inclusionList.isEmpty, !inclusionList.contains(bundleIdentifier) {
             throw ServerProviderError.ignored
         }
-        logger.debug("Connect \(bundleIdentifier) -- \(processIdentifier) -- updateFocusOnConnect \(updateFocusOnConnect)")
-        return try await .init(
-            processIdentifier: processIdentifier,
-            bundleIdentifier: bundleIdentifier,
-            output: output
-        )
+        logger.debug("Connect \(bundleIdentifier) -- \(processIdentifier)")
+        try await pool.withRunLoopExecutor { executor in
+            let application = try await Application(
+                processIdentifier: processIdentifier,
+                output: output,
+                executor: executor
+            )
+            let server = Server(
+                processIdentifier: processIdentifier,
+                bundleIdentifier: bundleIdentifier,
+                application: application
+            )
+            try await server.start()
+            do {
+                try await body(server)
+            } catch {
+                try? await server.stop()
+                throw error
+            }
+            try await server.stop()
+        }
     }
 }

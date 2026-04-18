@@ -1,11 +1,11 @@
-// swift-tools-version: 5.9
+// swift-tools-version:6.2
 
 import PackageDescription
 
 let package = Package(
     name: "ScreenReader",
     platforms: [
-        .macOS(.v14),
+        .macOS(.v15),
     ],
     products: [
         .library(
@@ -15,13 +15,16 @@ let package = Package(
     dependencies: [
         .package(
             url: "https://github.com/rustle/AccessibilityElement.git",
-            from: "0.1.14"),
+            .upToNextMajor(from: "0.2.1")
+        ),
         .package(
             url: "https://github.com/rustle/AX.git",
-            from: "0.1.10"),
+            .upToNextMajor(from: "0.2.0")
+        ),
         .package(
             url: "https://github.com/rustle/TargetAction.git",
-            from: "0.1.1"),
+            .upToNextMajor(from: "0.2.0")
+        ),
     ],
     targets: [
         .target(
@@ -30,13 +33,12 @@ let package = Package(
                 "AccessibilityElement",
                 "AX",
                 "TargetAction",
-            ],
-            swiftSettings: [
-                .enableExperimentalFeature("StrictConcurrency")
-            ]),
+            ]
+        ),
         .testTarget(
             name: "ScreenReaderTests",
-            dependencies: ["ScreenReader"]),
+            dependencies: ["ScreenReader"]
+        ),
     ],
-    swiftLanguageVersions: [.v5]
+    swiftLanguageModes: [.v6]
 )

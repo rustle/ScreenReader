@@ -1,12 +1,12 @@
 //
 //  Loggers.swift
 //
-//  Copyright © 2017-2022 Doug Russell. All rights reserved.
+//  Copyright © 2017-2026 Doug Russell. All rights reserved.
 //
 
 import os
 
-struct Loggers {
+struct Loggers: Sendable {
     static let logger = Logger(
         subsystem: "ScreenReader",
         category: "ScreenReader"
@@ -20,6 +20,10 @@ struct Loggers {
         category: "Hierarchy"
     )
     struct Controller {
+        static let observer = Logger(
+            subsystem: "ScreenReader",
+            category: "Observer"
+        )
         static let application = Logger(
             subsystem: "ScreenReader",
             category: "Application"

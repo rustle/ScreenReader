@@ -1,7 +1,7 @@
 //
 //  TextArea.swift
-//  
-//  Copyright © 2017-2023 Doug Russell. All rights reserved.
+//
+//  Copyright © 2017-2026 Doug Russell. All rights reserved.
 //
 
 import AccessibilityElement
@@ -16,6 +16,7 @@ public actor TextArea<ObserverType: Observer>: Controller where ObserverType.Obs
         element
     }
 
+    public nonisolated let unownedExecutor: UnownedSerialExecutor
     let observer: ApplicationObserver<ObserverType>
 
     private var observerTasks: [Task<Void, any Error>] = []
@@ -28,8 +29,10 @@ public actor TextArea<ObserverType: Observer>: Controller where ObserverType.Obs
     public init(
         element: ElementType,
         output: AsyncStream<Output.Job>.Continuation,
-        observer: ApplicationObserver<ObserverType>
+        observer: ApplicationObserver<ObserverType>,
+        executor: RunLoopExecutor
     ) async throws {
+        self.unownedExecutor = executor.asUnownedSerialExecutor()
         self.element = element
         self.output = output
         self.observer = observer
@@ -40,7 +43,7 @@ public actor TextArea<ObserverType: Observer>: Controller where ObserverType.Obs
         do {
             observerTasks.append(try await add(
                 notification: .valueChanged,
-                handler: target(uncheckedAction: TextArea<ObserverType>.valueChanged)
+                handler: target(action: TextArea<ObserverType>.valueChanged)
             ))
         } catch let error as ControllerObserverError {
             logger.info("\(error.localizedDescription)")
@@ -50,7 +53,7 @@ public actor TextArea<ObserverType: Observer>: Controller where ObserverType.Obs
         do {
             observerTasks.append(try await add(
                 notification: .selectedTextChanged,
-                handler: target(uncheckedAction: TextArea<ObserverType>.selectedTextChanged)
+                handler: target(action: TextArea<ObserverType>.selectedTextChanged)
             ))
         } catch let error as ControllerObserverError {
             logger.info("\(error.localizedDescription)")
@@ -59,8 +62,28 @@ public actor TextArea<ObserverType: Observer>: Controller where ObserverType.Obs
         }
         runState = .running
     }
+    private func output() async throws -> [Output.Job.Payload] {
+        var parts = [String]()
+        if let title = try? element.title(), !title.isEmpty {
+            parts.append(title)
+        } else if let titleUIElement = try? element.titleUIElement(), let title = try? titleUIElement.title(), !title.isEmpty {
+            parts.append(title)
+        }
+        if let roleDescription = try? element.roleDescription() {
+            parts.append(roleDescription)
+        }
+        guard !parts.isEmpty else { return [] }
+        return [.speech(parts.joined(separator: ", "), nil)]
+    }
     public func focus() async throws {
         logger.debug("\(self.element)")
+        let payloads = try await output()
+        guard !payloads.isEmpty else { return }
+        output.yield(.init(
+            options: [],
+            identifier: "",
+            payloads: payloads
+        ))
     }
     public func stop() async throws {
         logger.debug("\(self.element)")
@@ -70,15 +93,21 @@ public actor TextArea<ObserverType: Observer>: Controller where ObserverType.Obs
     }
     private func valueChanged(
         element: ElementType,
-        userInfo: [String:Sendable]?
+        userInfo: [String:ObserverElementInfoValue]?
     ) async {
-        //logger.debug("\(self.element)")
+        logger.debug("\(self.element)")
+        guard let value = (try? element.value()) as? String else { return }
+        output.yield(.init(
+            options: [],
+            identifier: "",
+            payloads: [.speech(value, nil)]
+        ))
     }
     private func selectedTextChanged(
         element: ElementType,
-        userInfo: [String:Sendable]?
+        userInfo: [String:ObserverElementInfoValue]?
     ) async {
-        //logger.debug("\(self.element)")
+        logger.debug("\(self.element)")
     }
 }
 

@@ -1,17 +1,26 @@
 //
 //  ScreenReader.swift
 //
-//  Copyright © 2017-2022 Doug Russell. All rights reserved.
+//  Copyright © 2017-2026 Doug Russell. All rights reserved.
 //
 
 import Cocoa
 
+/// ScreenReader manages the lifetime
+/// and configuration of your screen reader
+/// It will request and manage a `Server`
+/// instance for each `RunningApplication`
+/// it is aware of, including monitoring
+/// the process exit and doing tear down.
 public actor ScreenReader {
     private let serverProvider: ServerProvider
     private var runningApplications: RunningApplications?
     private var runningApplicationsTask: Task<Void, Error>?
     private let output = Output()
     private let dependencies: ScreenReaderDependencies
+    // Each entry is a Task that runs withServer for the app's lifetime.
+    // Cancelling the task stops the server and releases its executor.
+    private var runningApplicationTasks: [RunningApplication: Task<Void, Never>] = [:]
     public init(dependencies: Dependencies) {
         self.dependencies = dependencies.screenReaderDependenciesFactory()
         serverProvider = ServerProvider(dependencies: dependencies.serverProviderDependenciesFactory())
@@ -35,7 +44,7 @@ public actor ScreenReader {
             .stream
             .target(
                 self,
-                uncheckedAction: ScreenReader.handleApplication
+                action: ScreenReader.handleApplication
             )
         self.runningApplications = runningApplications
     }
@@ -43,7 +52,6 @@ public actor ScreenReader {
         runningApplicationsTask?.cancel()
         runningApplicationsTask = nil
     }
-    private var running: [RunningApplication:Server] = [:]
 }
 
 extension ScreenReader {
@@ -64,32 +72,36 @@ extension ScreenReader {
     }
     private func add(applications: [RunningApplication]) async {
         for key in applications {
-            do {
-                let server = try await serverProvider.connect(
-                    processIdentifier: key.processIdentifier,
-                    bundleIdentifier: key.bundleIdentifier,
-                    output: output
-                )
-                Loggers.logger.debug("Add \(key.processIdentifier) \(key.bundleIdentifier)")
-                try await server.start()
-                running[key] = server
-            } catch ServerProviderError.ignored {
-                Loggers.logger.error("Ignored \(key.processIdentifier) \(key.bundleIdentifier)")
-            } catch {
-                Loggers.logger.error("\(error.localizedDescription)")
+            let task = Task { [serverProvider, output] in
+                do {
+                    try await serverProvider.withServer(
+                        processIdentifier: key.processIdentifier,
+                        bundleIdentifier: key.bundleIdentifier,
+                        output: output
+                    ) { _ in
+                        // Suspend until the task is cancelled (app removed).
+                        try await Task.sleep(nanoseconds: .max)
+                    }
+                } catch is CancellationError {
+                    // Normal shutdown via task cancellation — no action needed.
+                } catch ServerProviderError.ignored {
+                    Loggers.logger.error("Ignored \(key.processIdentifier) \(key.bundleIdentifier)")
+                } catch {
+                    Loggers.logger.error("\(error.localizedDescription)")
+                }
             }
+            Loggers.logger.debug("Add \(key.processIdentifier) \(key.bundleIdentifier)")
+            runningApplicationTasks[key] = task
         }
     }
     private func remove(applications: [RunningApplication]) async {
         for key in applications {
-            if let server = running.removeValue(forKey: .init(processIdentifier: key.processIdentifier,
-                                                              bundleIdentifier: key.bundleIdentifier)) {
+            if let task = runningApplicationTasks.removeValue(forKey: RunningApplication(
+                processIdentifier: key.processIdentifier,
+                bundleIdentifier: key.bundleIdentifier
+            )) {
                 Loggers.logger.debug("Remove \(key.processIdentifier) \(key.bundleIdentifier)")
-                do {
-                    try await server.stop()
-                } catch {
-                    Loggers.logger.error("Server Stop Error: \(error.localizedDescription)")
-                }
+                task.cancel()
             }
         }
     }

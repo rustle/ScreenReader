@@ -1,7 +1,7 @@
 //
 //  ControllerHierarchy.swift
 //
-//  Copyright © 2017-2022 Doug Russell. All rights reserved.
+//  Copyright © 2017-2026 Doug Russell. All rights reserved.
 //
 
 import AccessibilityElement
@@ -16,135 +16,262 @@ public typealias ControllerFactory<ObserverType: AccessibilityElement.Observer> 
 
 public actor ControllerHierarchy<ObserverType: AccessibilityElement.Observer> where ObserverType.ObserverElement: Hashable {
     typealias ElementType = ObserverType.ObserverElement
-    private struct ControllerContext {
-        let task: Task<Void, any Error>?
+
+    // MARK: - Node
+
+    private final class Node: @unchecked Sendable {
+        let element: ElementType
         let controller: Controller
+        weak var parent: Node?
+        var children: [ElementType: Node] = [:]
+        var destroyTask: Task<Void, any Error>?
+
+        init(
+            element: ElementType,
+            controller: Controller
+        ) {
+            self.element = element
+            self.controller = controller
+        }
     }
-    private var logger: Logger {
-        Loggers.hierarchy
-    }
-    private var controllers: [ElementType:ControllerContext] = [:]
+
+    // MARK: - State
+
+    public nonisolated let unownedExecutor: UnownedSerialExecutor
+
+    private var nodes: [ElementType: Node] = [:]
+    /// Coalesces concurrent creation requests for the same element.
+    /// Between the guard check in getOrCreateNode and the point where we store the
+    /// finished node in `nodes`, the actor can be re-entered at any `await`. Without
+    /// this table a second caller would pass the guard, call observer.stream() again,
+    /// receive the same cached unicast AsyncThrowingStream, and spawn a second
+    /// iterating task.
+    private var pendingNodes: [ElementType: Task<Node, any Error>] = [:]
+    private var focusPath: [Node] = []
     private let application: Application<ObserverType>
     private let controllerFactory: ControllerFactory<ObserverType>
     private let observer: ApplicationObserver<ObserverType>
-    private var observerTasks: Set<Task<Void, any Error>> = .init()
+    private var logger: Logger {
+        Loggers.hierarchy
+    }
+
+    // MARK: - Init
+
     public init(
         application: Application<ObserverType>,
         observer: ApplicationObserver<ObserverType>,
-        controllerFactory: @escaping ControllerFactory<ObserverType>
+        controllerFactory: @escaping ControllerFactory<ObserverType>,
+        executor: RunLoopExecutor
     ) async throws {
+        self.unownedExecutor = executor.asUnownedSerialExecutor()
         self.application = application
         self.observer = observer
         self.controllerFactory = controllerFactory
     }
-    private func uiElementDestroyed(
-        element: ElementType,
-        userInfo: [String:Sendable]?
-    ) async {
-        logger.debug("\(element)")
-        guard let context = controllers.removeValue(forKey: element) else { return }
-        if let task = context.task {
-            task.cancel()
-            observerTasks.remove(task)
-        }
-        do {
-            try await context.controller.stop()
-        } catch {
-            logger.error("\(error.localizedDescription)")
-        }
-    }
+
+    // MARK: - Focus
+
+    /// Builds the focus chain for the given element, diffs against the previous chain,
+    /// stops controllers that left, starts controllers that entered, then calls focus()
+    /// on the leaf.
+    /// Returns the new chain (top-down) for the caller to cache.
     @discardableResult
     func focus(
-        application: ElementType,
+        application applicationElement: ElementType,
         element: ElementType,
-        output: AsyncStream<Output.Job>.Continuation,
-        observer: ApplicationObserver<ObserverType>
+        output: AsyncStream<Output.Job>.Continuation
     ) async throws -> [Controller] {
         logger.debug("\(element)")
+
+        // Build path bottom-up: leaf first, root last.
+        var newPathBottomUp: [Node] = []
         do {
-            var newFocus = [Controller]()
             var current: ElementType?
             do {
                 current = try element.focusedUIElement()
             } catch {
-                logger.error("\(error.localizedDescription)")
                 current = element
             }
-            while current != nil, current != application {
-                newFocus.append(try await controller(
-                    element: current!,
-                    output: output,
-                    observer: observer
+            while let c = current, c != applicationElement {
+                newPathBottomUp.append(try await getOrCreateNode(
+                    element: c,
+                    output: output
                 ))
-                current = try? current?.parent()
+                current = try? c.parent()
             }
-            for controller in newFocus {
-                try await controller.start()
-            }
-            return newFocus.reversed()
         } catch {
             logger.error("\(error.localizedDescription)")
             return []
         }
+
+        // Establish parent-child links among the newly created/visited nodes.
+        // newPathBottomUp[0] is the leaf; newPathBottomUp[i+1] is its parent.
+        for i in 0..<(newPathBottomUp.count - 1) {
+            let childNode = newPathBottomUp[i]
+            let parentNode = newPathBottomUp[i + 1]
+            if childNode.parent !== parentNode {
+                childNode.parent = parentNode
+                parentNode.children[childNode.element] = childNode
+            }
+        }
+
+        let newPath = newPathBottomUp.reversed() as [Node] // top-down
+
+        // Diff against the previous focus path.
+        let newElementSet = Set(newPath.map { $0.element })
+        let oldElementSet = Set(focusPath.map { $0.element })
+
+        for node in focusPath where !newElementSet.contains(node.element) {
+            do {
+                try await node.controller.unfocus()
+            } catch {
+                logger.error("\(error.localizedDescription)")
+            }
+        }
+        for node in newPath where !oldElementSet.contains(node.element) {
+            do {
+                try await node.controller.start()
+            } catch {
+                logger.error("\(error.localizedDescription)")
+            }
+        }
+
+        // Find the index at which the new path first diverges from the old path.
+        var divergenceIndex = 0
+        while divergenceIndex < focusPath.count,
+              divergenceIndex < newPath.count,
+              focusPath[divergenceIndex].element == newPath[divergenceIndex].element {
+            divergenceIndex += 1
+        }
+
+        focusPath = newPath
+
+        // Call focus() on the leaf.
+        if let leaf = newPath.last {
+            do {
+                try await leaf.controller.focus()
+            } catch {
+                logger.error("\(error.localizedDescription)")
+            }
+        }
+
+        return newPath.map {
+            $0.controller
+        }
     }
+
+    // MARK: - Controller access
+
+    /// Returns the controller for an element, creating it (and registering for
+    /// uiElementDestroyed) if it doesn't yet exist.
     @discardableResult
     func controller(
         element: ElementType,
-        output: AsyncStream<Output.Job>.Continuation,
-        observer: ApplicationObserver<ObserverType>
+        output: AsyncStream<Output.Job>.Continuation
     ) async throws -> Controller {
-        if let context = controllers[element] {
-            logger.debug("Cached controller for \(element)")
-            return context.controller
+        try await getOrCreateNode(
+            element: element,
+            output: output
+        ).controller
+    }
+
+    private func getOrCreateNode(
+        element: ElementType,
+        output: AsyncStream<Output.Job>.Continuation
+    ) async throws -> Node {
+        if let existing = nodes[element] {
+            logger.debug("Cached node for \(element)")
+            return existing
         }
-        logger.debug("\(element)")
-        let task: Task<Void, Error>?
-        do {
-            task = try await observerStreamTask(
-                element: element,
-                observer: observer
-            )
-        } catch let error as ControllerObserverError {
-            switch error {
-            case .notificationUnsupported:
-                break;
-            default:
-                logger.error("\(error.localizedDescription)")
+        // Coalesce: if creation is already in flight for this element, await that task.
+        // This closes the reentrancy window between the guard above and `nodes[element] = node`
+        // below — both calls share one observer.stream() call and therefore one iterating task.
+        if let pending = pendingNodes[element] {
+            logger.debug("Coalescing node creation for \(element)")
+            return try await pending.value
+        }
+        logger.debug("Creating node for \(element)")
+        // The Task body inherits this actor's isolation, so it runs on our executor.
+        // Storing it in pendingNodes before any await means reentrant callers see it immediately.
+        let creationTask = Task<Node, any Error> { [observer, controllerFactory] in
+            let destroyTask: Task<Void, any Error>?
+            do {
+                destroyTask = try await self.observerDestroyTask(element: element)
+            } catch let error as ControllerObserverError {
+                if case .notificationUnsupported = error {
+                    /* expected */
+                } else {
+                    self.logger.error("\(error.localizedDescription)")
+                }
+                destroyTask = nil
+            } catch {
+                self.logger.error("\(error.localizedDescription)")
+                destroyTask = nil
             }
-            task = nil
+            let controller = try await controllerFactory(element, output, observer)
+            let node = Node(
+                element: element,
+                controller: controller
+            )
+            node.destroyTask = destroyTask
+            return node
+        }
+        pendingNodes[element] = creationTask
+        do {
+            let node = try await creationTask.value
+            pendingNodes.removeValue(forKey: element)
+            nodes[element] = node
+            return node
+        } catch {
+            pendingNodes.removeValue(forKey: element)
+            throw error
+        }
+    }
+
+    // MARK: - Element destruction
+
+    private func uiElementDestroyed(
+        element: ElementType,
+        userInfo: [String:ObserverElementInfoValue]?
+    ) async {
+        logger.debug("\(element)")
+        guard let node = nodes[element] else { return }
+        await removeSubtree(node)
+    }
+
+    private func removeSubtree(_ node: Node) async {
+        for child in node.children.values {
+            await removeSubtree(child)
+        }
+        node.destroyTask?.cancel()
+        do {
+            try await node.controller.stop()
         } catch {
             logger.error("\(error.localizedDescription)")
-            task = nil
         }
-        let controller = try await controllerFactory(
-            element,
-            output,
-            observer
-        )
-        controllers[element] = .init(
-            task: task,
-            controller: controller
-        )
-        return controller
+        nodes.removeValue(forKey: node.element)
+        node.parent?.children.removeValue(forKey: node.element)
     }
-    private func observerStreamTask(
-        element: ElementType,
-        observer: ApplicationObserver<ObserverType>
-    ) async throws -> Task<Void, any Error> {
+
+    // MARK: - Observer task
+
+    private func observerDestroyTask(element: ElementType) async throws -> Task<Void, any Error> {
         let stream = try await observer.stream(
             element: element,
             notification: .uiElementDestroyed
         )
-        let target = target(uncheckedAction: ControllerHierarchy<ObserverType>.uiElementDestroyed)
-        let task: Task<Void, any Error> = Task(priority: .userInitiated) {
-            for try await notification in stream {
-                await target(
-                    notification.element,
-                    notification.info
-                )
+        let handler = target(action: ControllerHierarchy<ObserverType>.uiElementDestroyed)
+        return Task(priority: .userInitiated) {
+            do {
+                for try await notification in stream {
+                    await handler(
+                        notification.element,
+                        notification.info
+                    )
+                }
+            } catch {
+                self.logger.error("uiElementDestroyed stream error element=\(element.description) error=\(error.localizedDescription)")
             }
         }
-        observerTasks.insert(task)
-        return task
     }
 }

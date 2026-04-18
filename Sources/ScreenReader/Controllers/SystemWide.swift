@@ -1,7 +1,7 @@
 //
 //  SystemWide.swift
 //
-//  Copyright © 2017-2023 Doug Russell. All rights reserved.
+//  Copyright © 2017-2026 Doug Russell. All rights reserved.
 //
 
 import AccessibilityElement

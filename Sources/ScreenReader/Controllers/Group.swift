@@ -1,7 +1,7 @@
 //
 //  Group.swift
 //  
-//  Copyright © 2017-2023 Doug Russell. All rights reserved.
+//  Copyright © 2017-2026 Doug Russell. All rights reserved.
 //
 
 import AccessibilityElement
@@ -15,6 +15,7 @@ public actor Group<ObserverType: Observer>: Controller where ObserverType.Observ
         element
     }
 
+    public nonisolated let unownedExecutor: UnownedSerialExecutor
     let observer: ApplicationObserver<ObserverType>
 
     private var observerTasks: [Task<Void, any Error>] = []
@@ -27,8 +28,10 @@ public actor Group<ObserverType: Observer>: Controller where ObserverType.Observ
     public init(
         element: ElementType,
         output: AsyncStream<Output.Job>.Continuation,
-        observer: ApplicationObserver<ObserverType>
+        observer: ApplicationObserver<ObserverType>,
+        executor: RunLoopExecutor
     ) async throws {
+        self.unownedExecutor = executor.asUnownedSerialExecutor()
         self.element = element
         self.output = output
         self.observer = observer

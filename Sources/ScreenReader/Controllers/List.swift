@@ -1,7 +1,7 @@
 //
 //  List.swift
 //  
-//  Copyright © 2017-2023 Doug Russell. All rights reserved.
+//  Copyright © 2017-2026 Doug Russell. All rights reserved.
 //
 
 import AccessibilityElement
@@ -15,6 +15,7 @@ public actor List<ObserverType: Observer>: Controller where ObserverType.Observe
         element
     }
 
+    public nonisolated let unownedExecutor: UnownedSerialExecutor
     let observer: ApplicationObserver<ObserverType>
 
     private var observerTasks: [Task<Void, any Error>] = []
@@ -27,8 +28,10 @@ public actor List<ObserverType: Observer>: Controller where ObserverType.Observe
     public init(
         element: ElementType,
         output: AsyncStream<Output.Job>.Continuation,
-        observer: ApplicationObserver<ObserverType>
+        observer: ApplicationObserver<ObserverType>,
+        executor: RunLoopExecutor
     ) async throws {
+        self.unownedExecutor = executor.asUnownedSerialExecutor()
         self.element = element
         self.output = output
         self.observer = observer
@@ -39,7 +42,7 @@ public actor List<ObserverType: Observer>: Controller where ObserverType.Observe
         do {
             observerTasks.append(try await add(
                 notification: .selectedChildrenChanged,
-                handler: target(uncheckedAction: List<ObserverType>.selectedChildrenChanged)
+                handler: target(action: List<ObserverType>.selectedChildrenChanged)
             ))
         } catch let error as ControllerObserverError {
             logger.info("\(error.localizedDescription)")
@@ -58,42 +61,53 @@ public actor List<ObserverType: Observer>: Controller where ObserverType.Observe
         observerTasks = []
         runState = .stopped
     }
-    public func focus() async throws {
-        logger.debug("\(self.element)")
-        var buffer = ["Focus"]
-        if let title = try? element.title(), title.count > 0 {
-            buffer.append(title)
-        } else if let titleUIElement = try? element.titleUIElement(), let title = try? titleUIElement.title(), title.count > 0 {
-            buffer.append(title)
+    private func output() async throws -> [Output.Job.Payload] {
+        var parts = [String]()
+        if let title = try? element.title(), !title.isEmpty {
+            parts.append(title)
+        } else if let titleUIElement = try? element.titleUIElement(), let title = try? titleUIElement.title(), !title.isEmpty {
+            parts.append(title)
+
         }
         if let roleDescription = try? element.roleDescription() {
-            buffer.append(roleDescription)
+            parts.append(roleDescription)
         }
-        if let value = try? element.value() {
-            if let string = value as? String {
-                buffer.append(string)
-            } else {
-                logger.debug("\(String(describing: value))")
-            }
-        }
-        output.yield(
-            .init(
-                options: [],
-                identifier: "",
-                payloads: [
-                    .speech(buffer.joined(separator: ", "), nil)
-                ]
-            )
-        )
+        guard !parts.isEmpty else { return [] }
+        return [.speech(parts.joined(separator: ", "), nil)]
+    }
+    public func focus() async throws {
+        logger.debug("\(self.element)")
+        let payloads = try await output()
+        guard !payloads.isEmpty else { return }
+        output.yield(.init(
+            options: [],
+            identifier: "",
+            payloads: payloads
+        ))
     }
     private func selectedChildrenChanged(
         element: ElementType,
-        userInfo: [String:Sendable]?
+        userInfo: [String:ObserverElementInfoValue]?
     ) async {
         logger.debug("\(self.element)")
         do {
-            let children = try element.selectedChildren()
-            logger.debug("Selected Children \(children)")
+            let selected = try element.selectedChildren()
+            let titles = selected
+                .compactMap {
+                    try? $0.title()
+                }
+                .filter {
+                    !$0.isEmpty
+                }
+            guard !titles.isEmpty else { return }
+            let text = titles.count == 1
+                ? titles[0]
+                : "\(titles.joined(separator: ", ")), \(selected.count) items"
+            output.yield(.init(
+                options: [],
+                identifier: "",
+                payloads: [.speech(text, nil)]
+            ))
         } catch {
             logger.debug("\(error.localizedDescription)")
         }

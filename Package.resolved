@@ -1,21 +1,13 @@
 {
+  "originHash" : "7d456e9ad3b340900afa1bc43054e7cec04cd58f904538031a4d6593c3ce4c5b",
   "pins" : [
     {
       "identity" : "accessibilityelement",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/rustle/AccessibilityElement.git",
       "state" : {
-        "revision" : "c5d816e2c1aaee3ebd01c2e5d81f2596a163a474",
-        "version" : "0.1.13"
-      }
-    },
-    {
-      "identity" : "asynchrone",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/reddavis/Asynchrone",
-      "state" : {
-        "revision" : "29f33b57c4a350d4a58ec89584bd3fa750420fa8",
-        "version" : "0.21.0"
+        "revision" : "9362fba2b6202aaf5d2b7a3c91a8e4c9f9d2771d",
+        "version" : "0.2.1"
       }
     },
     {
@@ -23,8 +15,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/rustle/AX.git",
       "state" : {
-        "revision" : "15cdc4191443492190fbf05ad7abdd286b72b201",
-        "version" : "0.1.8"
+        "revision" : "605c1ed64f991c0f05ec8033a7dc2b2e018613c2",
+        "version" : "0.2.0"
       }
     },
     {
@@ -32,17 +24,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/apple/swift-atomics.git",
       "state" : {
-        "revision" : "919eb1d83e02121cdb434c7bfc1f0c66ef17febe",
-        "version" : "1.0.2"
-      }
-    },
-    {
-      "identity" : "swift-collections",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/apple/swift-collections.git",
-      "state" : {
-        "revision" : "f504716c27d2e5d4144fa4794b12129301d17729",
-        "version" : "1.0.3"
+        "revision" : "b601256eab081c0f92f059e12818ac1d4f178ff7",
+        "version" : "1.3.0"
       }
     },
     {
@@ -50,10 +33,10 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/rustle/TargetAction.git",
       "state" : {
-        "revision" : "3ce144557a1dd828f8f2737f4bc33364ea52f93d",
-        "version" : "0.1.0"
+        "revision" : "74d5ef2f1bb97d0daa38fcf1fe054fe2db7e01ed",
+        "version" : "0.2.0"
       }
     }
   ],
-  "version" : 2
+  "version" : 3
 }

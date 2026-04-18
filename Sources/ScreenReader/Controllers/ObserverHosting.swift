@@ -1,7 +1,7 @@
 //
 //  ObserverHosting.swift
 //  
-//  Copyright © 2017-2023 Doug Russell. All rights reserved.
+//  Copyright © 2017-2026 Doug Russell. All rights reserved.
 //
 
 import AccessibilityElement
@@ -15,7 +15,7 @@ protocol ObserverHosting: Controller {
     @Sendable
     func add(
         notification: NSAccessibility.Notification,
-        handler: @escaping @Sendable (ElementType, [String:Sendable]?) async -> Void
+        handler: @escaping @Sendable (ElementType, [String:ObserverElementInfoValue]?) async -> Void
     ) async throws -> Task<Void, any Error>
 }
 
@@ -23,7 +23,7 @@ extension ObserverHosting {
     @Sendable
     func add(
         notification: NSAccessibility.Notification,
-        handler: @escaping @Sendable (ElementType, [String:Sendable]?) async -> Void
+        handler: @escaping @Sendable (ElementType, [String:ObserverElementInfoValue]?) async -> Void
     ) async throws -> Task<Void, any Error> {
         try await Self.add(
             observer: observer,
