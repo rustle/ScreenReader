@@ -122,7 +122,8 @@ public actor Application<ObserverType: Observer>: Controller where ObserverType.
             do {
                 try await hierarchy.controller(
                     element: window,
-                    output: jobsContinuation
+                    bufferedOutput: jobsContinuation,
+                    directOutput: output
                 )
             } catch {
                 logger.error("\(error.localizedDescription)")
@@ -194,7 +195,8 @@ public actor Application<ObserverType: Observer>: Controller where ObserverType.
             focus = try await hierarchy.focus(
                 application: element,
                 element: focusedUIElement,
-                output: jobsContinuation
+                bufferedOutput: jobsContinuation,
+                directOutput: output
             )
         } catch {
             logger.error("\(error.localizedDescription)")
@@ -206,7 +208,8 @@ extension Application {
     @Sendable
     fileprivate static func controller(
         element: ElementType,
-        output: AsyncStream<Output.Job>.Continuation,
+        bufferedOutput: AsyncStream<Output.Job>.Continuation,
+        directOutput: any OutputContext,
         observer: ApplicationObserver<ObserverType>,
         executor: RunLoopExecutor
     ) async throws -> Controller {
@@ -214,70 +217,70 @@ extension Application {
         case .button:
             try await Button(
                 element: element,
-                output: output,
+                output: bufferedOutput,
                 observer: observer,
                 executor: executor
             )
         case .comboBox:
             try await ComboBox(
                 element: element,
-                output: output,
+                output: bufferedOutput,
                 observer: observer,
                 executor: executor
             )
         case .group:
             try await Group(
                 element: element,
-                output: output,
+                output: bufferedOutput,
                 observer: observer,
                 executor: executor
             )
         case .list:
             try await List(
                 element: element,
-                output: output,
+                output: bufferedOutput,
                 observer: observer,
                 executor: executor
             )
         case .table:
             try await Table(
                 element: element,
-                output: output,
+                output: bufferedOutput,
                 observer: observer,
                 executor: executor
             )
         case .textField:
             try await TextField(
                 element: element,
-                output: output,
+                output: bufferedOutput,
                 observer: observer,
                 executor: executor
             )
         case .textArea:
             try await TextArea(
                 element: element,
-                output: output,
+                output: bufferedOutput,
                 observer: observer,
                 executor: executor
             )
         case .webArea:
             try await WebArea(
                 element: element,
-                output: output,
+                output: bufferedOutput,
                 observer: observer,
                 executor: executor
             )
         case .window:
             try await Window(
                 element: element,
-                output: output,
+                output: bufferedOutput,
                 observer: observer,
                 executor: executor
             )
         default:
             try await Unknown(
                 element: element,
-                output: output,
+                output: bufferedOutput,
                 observer: observer,
                 executor: executor
             )
@@ -303,10 +306,11 @@ extension Application where ObserverType == SystemObserver {
                     )
                 )
             },
-            controllerFactory: { element, output, observer in
+            controllerFactory: { element, bufferedOutput, directOutput, observer in
                 try await Application.controller(
                     element: element,
-                    output: output,
+                    bufferedOutput: bufferedOutput,
+                    directOutput: directOutput,
                     observer: observer,
                     executor: executor
                 )

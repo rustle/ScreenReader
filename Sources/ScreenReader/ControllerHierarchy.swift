@@ -11,6 +11,7 @@ import os
 public typealias ControllerFactory<ObserverType: AccessibilityElement.Observer> = @Sendable (
     ObserverType.ObserverElement,
     AsyncStream<Output.Job>.Continuation,
+    any OutputContext,
     ApplicationObserver<ObserverType>
 ) async throws -> Controller where ObserverType.ObserverElement: Hashable
 
@@ -79,7 +80,8 @@ public actor ControllerHierarchy<ObserverType: AccessibilityElement.Observer> wh
     func focus(
         application applicationElement: ElementType,
         element: ElementType,
-        output: AsyncStream<Output.Job>.Continuation
+        bufferedOutput: AsyncStream<Output.Job>.Continuation,
+        directOutput: any OutputContext
     ) async throws -> [Controller] {
         logger.debug("\(element)")
 
@@ -95,7 +97,8 @@ public actor ControllerHierarchy<ObserverType: AccessibilityElement.Observer> wh
             while let c = current, c != applicationElement {
                 newPathBottomUp.append(try await getOrCreateNode(
                     element: c,
-                    output: output
+                    bufferedOutput: bufferedOutput,
+                    directOutput: directOutput
                 ))
                 current = try? c.parent()
             }
@@ -162,7 +165,7 @@ public actor ControllerHierarchy<ObserverType: AccessibilityElement.Observer> wh
                     }
                 }
                 if !ancestorPayloads.isEmpty {
-                    output.yield(.init(
+                    bufferedOutput.yield(.init(
                         options: [.interrupt],
                         identifier: "",
                         payloads: ancestorPayloads
@@ -192,11 +195,13 @@ public actor ControllerHierarchy<ObserverType: AccessibilityElement.Observer> wh
     @discardableResult
     func controller(
         element: ElementType,
-        output: AsyncStream<Output.Job>.Continuation
+        bufferedOutput: AsyncStream<Output.Job>.Continuation,
+        directOutput: any OutputContext
     ) async throws -> Controller {
         try await getOrCreateNode(
             element: element,
-            output: output
+            bufferedOutput: bufferedOutput,
+            directOutput: directOutput
         ).controller
     }
 
@@ -207,7 +212,8 @@ public actor ControllerHierarchy<ObserverType: AccessibilityElement.Observer> wh
 
     private func getOrCreateNode(
         element: ElementType,
-        output: AsyncStream<Output.Job>.Continuation
+        bufferedOutput: AsyncStream<Output.Job>.Continuation,
+        directOutput: any OutputContext
     ) async throws -> Node {
         if let existing = nodes[element] {
             logger.debug("Cached node for \(element)")
@@ -238,7 +244,12 @@ public actor ControllerHierarchy<ObserverType: AccessibilityElement.Observer> wh
                 self.logger.error("\(error.localizedDescription)")
                 destroyTask = nil
             }
-            let controller = try await controllerFactory(element, output, observer)
+            let controller = try await controllerFactory(
+                element,
+                bufferedOutput,
+                directOutput,
+                observer
+            )
             let node = Node(
                 element: element,
                 controller: controller
