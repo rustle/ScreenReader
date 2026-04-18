@@ -56,6 +56,10 @@ struct Loggers: Sendable {
             subsystem: "ScreenReader",
             category: "TextArea"
         )
+        static let systemWide = Logger(
+            subsystem: "ScreenReader",
+            category: "SystemWide"
+        )
         static let unknown = Logger(
             subsystem: "ScreenReader",
             category: "Unknown"

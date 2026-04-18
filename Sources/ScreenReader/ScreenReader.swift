@@ -24,8 +24,9 @@ public actor ScreenReader {
     // Live servers keyed by PID for fast command dispatch.
     private var serversByProcessIdentifier: [pid_t: Server] = [:]
     // Process Identifier accessibility is/should be focused on
-    // We don't update this (yet) but need it for dispatch scaffolding
     private var focusedProcessIdentifier: pid_t = 0
+    private var systemWide: SystemWide?
+    private var focusedApplicationTask: Task<Void, Never>?
 
     public init(dependencies: Dependencies) {
         let screenReaderDeps = dependencies.screenReaderDependenciesFactory()
@@ -57,11 +58,29 @@ public actor ScreenReader {
                 action: ScreenReader.handleApplication
             )
         self.runningApplications = runningApplications
+
+        let focusedRunningApplication = try await dependencies.focusedRunningApplicationFactory()
+        let systemWide = try SystemWide(focusedRunningApplication: focusedRunningApplication)
+        try await systemWide.start()
+        self.systemWide = systemWide
+        focusedApplicationTask = Task { [weak self] in
+            for await pid in systemWide.focusedApplicationStream {
+                await self?.setFocusedProcessIdentifier(pid)
+            }
+        }
     }
 
     public func stop() async throws {
+        focusedApplicationTask?.cancel()
+        focusedApplicationTask = nil
+        try? await systemWide?.stop()
+        systemWide = nil
         runningApplicationsTask?.cancel()
         runningApplicationsTask = nil
+    }
+
+    private func setFocusedProcessIdentifier(_ focusedProcessIdentifier: pid_t) {
+        self.focusedProcessIdentifier = focusedProcessIdentifier
     }
 
     public func dispatchCommand(_ command: ScreenReaderCommand) async {
