@@ -73,6 +73,10 @@ struct Loggers: Sendable {
             category: "Window"
         )
     }
+    static let commandSource = Logger(
+        subsystem: "ScreenReader",
+        category: "CommandSource"
+    )
     struct Output {
         static let output = Logger(
             subsystem: "ScreenReader",

@@ -27,6 +27,9 @@ public actor ScreenReader {
     private var focusedProcessIdentifier: pid_t = 0
     private var systemWide: SystemWide?
     private var focusedApplicationTask: Task<Void, Never>?
+    // Active command sources keyed by their identifier for O(1) add/remove.
+    private var commandSources: [String: any CommandSource] = [:]
+    private var commandSourceTasks: [String: Task<Void, any Error>] = [:]
 
     public init(dependencies: Dependencies) {
         let screenReaderDeps = dependencies.screenReaderDependenciesFactory()
@@ -68,6 +71,33 @@ public actor ScreenReader {
                 await self?.setFocusedProcessIdentifier(pid)
             }
         }
+
+        let commandSourcesFactory = dependencies.commandSourcesFactory
+        let sources = try await MainActor.run {
+            try commandSourcesFactory()
+        }
+        for source in sources {
+            await addCommandSource(source)
+        }
+    }
+
+    /// Register a command source. Its handler is wired to dispatch commands
+    /// to the frontmost application. Safe to call at any time after init.
+    public func addCommandSource(_ source: any CommandSource) async {
+        commandSources[source.identifier] = source
+        commandSourceTasks[source.identifier] = source
+            .dispatch
+            .target(
+                self,
+                priority: .userInitiated,
+                action: ScreenReader.dispatchCommand
+            )
+    }
+
+    /// Deregister a command source and clear its handler.
+    public func removeCommandSource(_ source: any CommandSource) async {
+        commandSources.removeValue(forKey: source.identifier)
+        commandSourceTasks.removeValue(forKey: source.identifier)?.cancel()
     }
 
     public func stop() async throws {
