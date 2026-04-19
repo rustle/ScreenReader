@@ -19,6 +19,10 @@ public enum ScreenReaderCommand: Sendable, Hashable {
     case navigateNext       // move to the next sibling
     case navigatePrevious   // move to the previous sibling
 
+    // Reading
+    case readAll
+    case stopReading
+
     // Actions
     case performDefaultAction
     case performAction(NSAccessibility.Action)

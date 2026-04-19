@@ -270,7 +270,10 @@ extension Application {
         case .textArea:
             try await TextArea(
                 element: element,
-                output: bufferedOutput,
+                output: .init(
+                    directOutput: directOutput,
+                    bufferedOutput: bufferedOutput
+                ),
                 observer: observer,
                 executor: executor
             )

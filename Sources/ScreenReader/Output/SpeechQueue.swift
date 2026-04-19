@@ -8,12 +8,21 @@
 // Intentionally not Sendable — must only be mutated from within
 // the owning actor.
 struct UtteranceQueue {
-    private var pending: [String] = []
+    /// A pending or in-flight speech item. Carries the job so the identifier
+    /// is available when the synthesizer delegate fires.
+    struct Entry: Sendable {
+        /// Expanded text ready for the synthesizer.
+        let text: String
+        /// The job that produced this utterance, preserved for identifier lookup.
+        let job: Output.Job
+    }
+
+    private var pending: [Entry] = []
     private(set) var isSpeaking = false
 
     enum EnqueueResult {
-        /// Begin speaking this text immediately.
-        case speak(String)
+        /// Begin speaking this entry immediately.
+        case speak(Entry)
         /// Stop the current utterance; the delegate's didFinish callback will drain the queue.
         case stopThenSpeak
         /// Already speaking; the delegate's didFinish callback will drain the queue.
@@ -24,12 +33,13 @@ struct UtteranceQueue {
     /// cleared first so only this utterance remains.
     mutating func enqueue(
         _ text: String,
+        job: Output.Job,
         interrupt: Bool
     ) -> EnqueueResult {
         if interrupt {
             pending.removeAll()
         }
-        pending.append(text)
+        pending.append(Entry(text: text, job: job))
         if interrupt && isSpeaking {
             return .stopThenSpeak
         } else if !isSpeaking {
@@ -48,8 +58,8 @@ struct UtteranceQueue {
     }
 
     /// Call from the synthesizer's didFinish/didCancel delegate callback.
-    /// Returns the next string to speak, or nil if the queue is empty.
-    mutating func didFinish() -> String? {
+    /// Returns the next entry to speak, or nil if the queue is empty.
+    mutating func didFinish() -> Entry? {
         isSpeaking = false
         guard !pending.isEmpty else {
             return nil

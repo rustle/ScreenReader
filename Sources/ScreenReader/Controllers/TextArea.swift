@@ -21,7 +21,11 @@ public actor TextArea<ObserverType: Observer>: Controller where ObserverType.Obs
 
     private var observerTasks: [Task<Void, any Error>] = []
     private var runState: RunState = .stopped
+    private var readAllTask: Task<Void, Never>?
     private let output: AsyncStream<Output.Job>.Continuation
+    /// Direct output context for operations that need backpressure (e.g. read-all),
+    /// bypassing the Application's bufferingNewest(1) stream.
+    private let directOutput: any OutputContext
     /// The controller for this element's parent in the controller hierarchy.
     weak private var parentController: (any Controller)?
     private var logger: Logger {
@@ -36,17 +40,23 @@ public actor TextArea<ObserverType: Observer>: Controller where ObserverType.Obs
     private var textBuffer: String = ""
     private var bufferRange: Range<Int> = 0..<0
     private let bufferRadius: Int = 128
+    
+    public struct TextAreaOutput {
+        let directOutput: any OutputContext
+        let bufferedOutput: AsyncStream<Output.Job>.Continuation
+    }
 
     public init(
         element: ElementType,
-        output: AsyncStream<Output.Job>.Continuation,
+        output: TextAreaOutput,
         observer: ApplicationObserver<ObserverType>,
         executor: RunLoopExecutor
     ) async throws {
         self.unownedExecutor = executor.asUnownedSerialExecutor()
         self.element = element
-        self.output = output
+        self.output = output.bufferedOutput
         self.observer = observer
+        self.directOutput = output.directOutput
     }
 
     public func setParent(_ controller: (any Controller)?) async {
@@ -110,6 +120,11 @@ public actor TextArea<ObserverType: Observer>: Controller where ObserverType.Obs
         runState = .stopped
     }
     private func refreshBuffer(caret: Int) throws {
+        guard caret >= 0, caret <= previousCharacterCount else {
+            textBuffer = ""
+            bufferRange = 0..<0
+            return
+        }
         let start = max(0, caret - bufferRadius)
         let end = min(previousCharacterCount, caret + bufferRadius)
         guard start < end else {
@@ -169,7 +184,9 @@ public actor TextArea<ObserverType: Observer>: Controller where ObserverType.Obs
             valueDidChangeThisCycle = false
             return
         }
-        guard let newRange = try? element.selectedTextRange() else { return }
+        guard let newRange = try? element.selectedTextRange(),
+              newRange.lowerBound != .max,
+              newRange.upperBound != .max else { return }
         defer {
             previousSelectedRange = newRange
             previousLineNumber = (try? element.line(forIndex: newRange.lowerBound)) ?? previousLineNumber
@@ -210,6 +227,92 @@ public actor TextArea<ObserverType: Observer>: Controller where ObserverType.Obs
                 ))
             }
         }
+    }
+
+    public func readAll() async throws {
+        readAllTask?.cancel()
+        let startIndex = previousSelectedRange.lowerBound
+        readAllTask = Task {
+            do {
+                let totalChars = (try? element.numberOfCharacters()) ?? 0
+                guard totalChars > 0 else { return }
+                var currentIndex = startIndex
+                var isFirst = true
+                while currentIndex < totalChars {
+                    try Task.checkCancellation()
+                    guard let lineNumber = try? element.line(forIndex: currentIndex),
+                          let lineRange = try? element.range(forLine: lineNumber),
+                          !lineRange.isEmpty else {
+                        currentIndex += 1
+                        continue
+                    }
+                    // Advance past this line before the await so the loop
+                    // position is correct even if the task is cancelled mid-flight.
+                    currentIndex = lineRange.upperBound
+                    let text = (try? element.string(for: lineRange)) ?? ""
+                    guard !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+                        continue
+                    }
+                    scrollToVisible(range: lineRange)
+                    // Interrupt on the first chunk to stop whatever is currently
+                    // speaking; subsequent chunks play back-to-back via backpressure.
+                    let options: Output.Options = isFirst ? [.interrupt] : []
+                    isFirst = false
+                    try await directOutput.submitAndWait(job: .init(
+                        options: options,
+                        identifier: UUID().uuidString,
+                        payloads: [.speech(text, nil)]
+                    ))
+                }
+            } catch is CancellationError {
+                // Stopped normally via stopReadAll() or focus change.
+            } catch {
+                logger.error("readAll: \(error.localizedDescription)")
+            }
+        }
+    }
+
+    public func stopReadAll() async throws {
+        readAllTask?.cancel()
+        readAllTask = nil
+        // cancelSpeech through the interactive stream resumes any in-flight
+        // submitAndWait continuation, which lets the read-all task reach its
+        // next checkCancellation point and exit cleanly.
+        output.yield(.init(
+            options: [.interrupt],
+            identifier: "cancel",
+            payloads: [.cancelSpeech]
+        ))
+    }
+
+    public func dispatch(command: ScreenReaderCommand) async {
+        switch command {
+        case .readAll:
+            try? await readAll()
+        case .stopReading:
+            try? await stopReadAll()
+        default:
+            break
+        }
+    }
+
+    /// Scrolls the containing scroll view so that `range` is visible.
+    /// Walks the AX parent chain to find the clip view (direct parent) and
+    /// scroll area (grandparent), then repositions the clip view if needed.
+    func scrollToVisible(range: Range<Int>) {
+        guard let rangeBounds = try? element.bounds(for: range) else { return }
+        guard let clipView = try? element.parent(),
+              let scrollView = try? clipView.parent(),
+              (try? scrollView.role()) == .scrollArea else { return }
+        guard let clipFrame = try? clipView.frame() else { return }
+        guard !clipFrame.contains(rangeBounds) else { return }
+        var newPosition = clipFrame.origin
+        if rangeBounds.minY < clipFrame.minY {
+            newPosition.y = rangeBounds.minY
+        } else if rangeBounds.maxY > clipFrame.maxY {
+            newPosition.y = rangeBounds.maxY - clipFrame.height
+        }
+        try? clipView.setPosition(newPosition)
     }
 }
 

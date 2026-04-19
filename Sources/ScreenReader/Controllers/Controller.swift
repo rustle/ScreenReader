@@ -27,6 +27,10 @@ public protocol Controller: Actor {
     func output(event: ControllerOutputEvent) async throws -> [Output.Job.Payload]
     /// Called by ControllerHierarchy when this controller's parent in the hierarchy changes.
     func setParent(_ controller: (any Controller)?) async
+    /// Begin reading all content from the current cursor position to the end.
+    func readAll() async throws
+    /// Stop an in-progress read-all and silence any queued speech.
+    func stopReadAll() async throws
     /// Dispatch a screen reader command to this controller.
     func dispatch(command: ScreenReaderCommand) async
 }
@@ -36,6 +40,8 @@ extension Controller {
     public func unfocus() async throws {}
     public func output(event: ControllerOutputEvent) async throws -> [Output.Job.Payload] { [] }
     public func setParent(_ controller: (any Controller)?) async {}
+    public func readAll() async throws {}
+    public func stopReadAll() async throws {}
     public func dispatch(command: ScreenReaderCommand) async {}
 }
 

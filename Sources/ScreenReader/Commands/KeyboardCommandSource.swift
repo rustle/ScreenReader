@@ -14,6 +14,7 @@ public let defaultKeyboardBindings: [CGKeyCode: ScreenReaderCommand] = [
     CGKeyCode(kVK_DownArrow):  .moveDown,
     CGKeyCode(kVK_LeftArrow):  .moveLeft,
     CGKeyCode(kVK_RightArrow): .moveRight,
+    CGKeyCode(kVK_ANSI_A):     .readAll,
 ]
 
 /// A `CommandSource` driven by CapsLock (as a modifier key) combined with

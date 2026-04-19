@@ -8,6 +8,15 @@ import Foundation
 
 public protocol OutputContext: Sendable {
     func submit(job: Output.Job) async throws
+    /// Submit a job and suspend until its speech payloads have finished playing
+    /// (or been cancelled). Jobs with an empty identifier fall through to `submit`.
+    func submitAndWait(job: Output.Job) async throws
+}
+
+extension OutputContext {
+    public func submitAndWait(job: Output.Job) async throws {
+        try await submit(job: job)
+    }
 }
 
 public actor Output: OutputContext {
@@ -50,6 +59,16 @@ public actor Output: OutputContext {
         Loggers.Output.output.debug("\(job)")
         for context in contexts {
             try await context.submit(job: job)
+        }
+    }
+
+    public func submitAndWait(job: Job) async throws {
+        Loggers.Output.output.debug("submitAndWait \(job)")
+        try await withThrowingTaskGroup(of: Void.self) { group in
+            for context in contexts {
+                group.addTask { try await context.submitAndWait(job: job) }
+            }
+            try await group.waitForAll()
         }
     }
 
