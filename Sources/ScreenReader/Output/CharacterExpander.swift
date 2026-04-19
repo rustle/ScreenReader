@@ -51,5 +51,6 @@ enum CharacterExpander {
         "\"": "quote",
         "-":  "dash",
         "#":  "pound",
+        "/": "forward slash",
     ]
 }
