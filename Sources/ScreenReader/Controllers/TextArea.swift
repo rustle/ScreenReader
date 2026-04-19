@@ -152,10 +152,9 @@ public actor TextArea<ObserverType: Observer>: Controller where ObserverType.Obs
             let deletedStart = newRange.lowerBound
             let deletedEnd = deletedStart + deletedCount
             let highConfidence = bufferRange.lowerBound <= deletedStart && deletedEnd <= bufferRange.upperBound
-            if highConfidence {
-                let bufferOffset = deletedStart - bufferRange.lowerBound
-                let startIndex = textBuffer.index(textBuffer.startIndex, offsetBy: bufferOffset)
-                let endIndex = textBuffer.index(startIndex, offsetBy: deletedCount)
+            if highConfidence,
+               let startIndex = textBuffer.index(textBuffer.startIndex, offsetBy: deletedStart - bufferRange.lowerBound, limitedBy: textBuffer.endIndex),
+               let endIndex = textBuffer.index(startIndex, offsetBy: deletedCount, limitedBy: textBuffer.endIndex) {
                 text = String(textBuffer[startIndex..<endIndex])
             } else {
                 // TODO: Use a sound instead of "deleted"
