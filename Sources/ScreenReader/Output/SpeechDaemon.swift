@@ -80,7 +80,7 @@ public actor SpeechDaemon: OutputContext {
                     ? CharacterExpander.expand(text)
                     : text
                 let interrupt = isInterrupt || options?.contains(.interrupt) == true
-                Loggers.Output.speech.debug("enqueue: \(expanded)")
+                //Loggers.Output.speech.debug("enqueue: \(expanded)")
                 switch queue.enqueue(expanded, job: job, interrupt: interrupt) {
                 case .speak(let entry):
                     speak(entry: entry, synth: synth)

@@ -94,7 +94,7 @@ public actor SpeechInProcess: OutputContext {
                     ? CharacterExpander.expand(text)
                     : text
                 let interrupt = isInterrupt || options?.contains(.interrupt) == true
-                Loggers.Output.speech.debug("enqueue: \(expanded)")
+                //Loggers.Output.speech.debug("enqueue: \(expanded)")
                 switch queue.enqueue(expanded, job: job, interrupt: interrupt) {
                 case .speak(let entry):
                     speak(entry: entry, synthesizer: synth)
@@ -113,7 +113,7 @@ public actor SpeechInProcess: OutputContext {
     @available(macOS, deprecated: 14.0)
     private func speak(entry: UtteranceQueue.Entry,
                        synthesizer: NSSpeechSynthesizer) {
-        Loggers.Output.speech.debug("startSpeaking: \(entry.text)")
+        //Loggers.Output.speech.debug("startSpeaking: \(entry.text)")
         currentIdentifier = entry.job.identifier
         synthesizer.startSpeaking(entry.text)
     }
