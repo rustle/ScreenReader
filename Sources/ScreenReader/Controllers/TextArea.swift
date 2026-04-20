@@ -152,10 +152,22 @@ public actor TextArea<ObserverType: Observer>: Controller where ObserverType.Obs
             let deletedStart = newRange.lowerBound
             let deletedEnd = deletedStart + deletedCount
             let highConfidence = bufferRange.lowerBound <= deletedStart && deletedEnd <= bufferRange.upperBound
-            if highConfidence,
-               let startIndex = textBuffer.index(textBuffer.startIndex, offsetBy: deletedStart - bufferRange.lowerBound, limitedBy: textBuffer.endIndex),
-               let endIndex = textBuffer.index(startIndex, offsetBy: deletedCount, limitedBy: textBuffer.endIndex) {
-                text = String(textBuffer[startIndex..<endIndex])
+            if highConfidence {
+                // AX reports positions as NSString (UTF-16) code-unit offsets, so
+                // advance through the UTF-16 view to avoid miscounting multi-unit
+                // scalars such as emoji (e.g. 👋 = 2 UTF-16 units, 1 grapheme cluster).
+                let utf16 = textBuffer.utf16
+                let startOff = deletedStart - bufferRange.lowerBound
+                let endOff = startOff + deletedCount
+                if let utf16Start = utf16.index(utf16.startIndex, offsetBy: startOff, limitedBy: utf16.endIndex),
+                   let utf16End = utf16.index(utf16.startIndex, offsetBy: endOff, limitedBy: utf16.endIndex),
+                   let startIndex = utf16Start.samePosition(in: textBuffer),
+                   let endIndex = utf16End.samePosition(in: textBuffer) {
+                    text = String(textBuffer[startIndex..<endIndex])
+                } else {
+                    // TODO: Use a sound instead of "deleted"
+                    text = "deleted"
+                }
             } else {
                 // TODO: Use a sound instead of "deleted"
                 text = "deleted"
@@ -218,7 +230,9 @@ public actor TextArea<ObserverType: Observer>: Controller where ObserverType.Obs
                 let lo = min(previousSelectedRange.lowerBound, newRange.lowerBound)
                 let hi = max(previousSelectedRange.lowerBound, newRange.lowerBound)
                 guard let jumped = try? element.string(for: lo..<hi), !jumped.isEmpty else { return }
-                let speechOptions: Output.Options = delta == 1 ? [.byCharacter, .interrupt] : .interrupt
+                // Use grapheme-cluster count, not UTF-16 delta, so that emoji
+                // (delta == 2 UTF-16 units but 1 cluster) speaks as a character.
+                let speechOptions: Output.Options = jumped.count == 1 ? [.byCharacter, .interrupt] : .interrupt
                 output.yield(.init(
                     options: [],
                     identifier: "",

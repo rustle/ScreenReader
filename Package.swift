@@ -15,7 +15,7 @@ let package = Package(
     dependencies: [
         .package(
             url: "https://github.com/rustle/AccessibilityElement.git",
-            .upToNextMajor(from: "0.2.4")
+            .upToNextMajor(from: "0.2.6")
         ),
         .package(
             url: "https://github.com/rustle/AX.git",
@@ -37,7 +37,11 @@ let package = Package(
         ),
         .testTarget(
             name: "ScreenReaderTests",
-            dependencies: ["ScreenReader"]
+            dependencies: [
+                "ScreenReader",
+                "AccessibilityElement",
+                .product(name: "AccessibilityElementMocks", package: "AccessibilityElement"),
+            ]
         ),
     ],
     swiftLanguageModes: [.v6]

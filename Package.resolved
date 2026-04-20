@@ -1,13 +1,13 @@
 {
-  "originHash" : "4de884e5b80b574247574eaf095b0ef1374db35f4c2006631ab02b472021ea45",
+  "originHash" : "49744ab0fa98f650b7562e336de8802e3bba52cde10ab9f2cca572a37340b9ca",
   "pins" : [
     {
       "identity" : "accessibilityelement",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/rustle/AccessibilityElement.git",
       "state" : {
-        "revision" : "a72f63ed9e66ee3c93b86008c75544ee04e7e85e",
-        "version" : "0.2.3"
+        "revision" : "299b164b1302eeab9fd13ebe0998bd6445a1724c",
+        "version" : "0.2.6"
       }
     },
     {
@@ -15,8 +15,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/rustle/AX.git",
       "state" : {
-        "revision" : "605c1ed64f991c0f05ec8033a7dc2b2e018613c2",
-        "version" : "0.2.0"
+        "revision" : "cacb8833a5f687d6d342f7bb4695274eb2f9f9b3",
+        "version" : "0.2.1"
       }
     },
     {
