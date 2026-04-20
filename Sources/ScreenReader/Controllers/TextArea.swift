@@ -310,22 +310,8 @@ public actor TextArea<ObserverType: Observer>: Controller where ObserverType.Obs
     }
 
     /// Scrolls the containing scroll view so that `range` is visible.
-    /// Walks the AX parent chain to find the clip view (direct parent) and
-    /// scroll area (grandparent), then repositions the clip view if needed.
     func scrollToVisible(range: Range<Int>) {
-        guard let rangeBounds = try? element.bounds(for: range) else { return }
-        guard let clipView = try? element.parent(),
-              let scrollView = try? clipView.parent(),
-              (try? scrollView.role()) == .scrollArea else { return }
-        guard let clipFrame = try? clipView.frame() else { return }
-        guard !clipFrame.contains(rangeBounds) else { return }
-        var newPosition = clipFrame.origin
-        if rangeBounds.minY < clipFrame.minY {
-            newPosition.y = rangeBounds.minY
-        } else if rangeBounds.maxY > clipFrame.maxY {
-            newPosition.y = rangeBounds.maxY - clipFrame.height
-        }
-        try? clipView.setPosition(newPosition)
+        try? element.setVisibleCharacterRange(range)
     }
 }
 
