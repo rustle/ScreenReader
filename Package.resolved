@@ -1,6 +1,15 @@
 {
-  "originHash" : "2e3978a8822490258d64b41a51f7cfab124cc3690ad00ecc1941f948a20b132f",
+  "originHash" : "7e7b4afb5591c386fbcb3295b208b9347ae309fd07a90fb42a5308c8e6642a02",
   "pins" : [
+    {
+      "identity" : "accessibilityelement",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/rustle/AccessibilityElement.git",
+      "state" : {
+        "revision" : "87f62d12ae584173b7039a2f0c59498dfc54fd42",
+        "version" : "0.2.7"
+      }
+    },
     {
       "identity" : "ax",
       "kind" : "remoteSourceControl",
