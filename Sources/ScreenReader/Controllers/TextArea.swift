@@ -157,10 +157,10 @@ public actor TextArea<ObserverType: Observer>: Controller where ObserverType.Obs
                 // advance through the UTF-16 view to avoid miscounting multi-unit
                 // scalars such as emoji (e.g. 👋 = 2 UTF-16 units, 1 grapheme cluster).
                 let utf16 = textBuffer.utf16
-                let startOff = deletedStart - bufferRange.lowerBound
-                let endOff = startOff + deletedCount
-                if let utf16Start = utf16.index(utf16.startIndex, offsetBy: startOff, limitedBy: utf16.endIndex),
-                   let utf16End = utf16.index(utf16.startIndex, offsetBy: endOff, limitedBy: utf16.endIndex),
+                let startOffset = deletedStart - bufferRange.lowerBound
+                let endOffset = startOffset + deletedCount
+                if let utf16Start = utf16.index(utf16.startIndex, offsetBy: startOffset, limitedBy: utf16.endIndex),
+                   let utf16End = utf16.index(utf16.startIndex, offsetBy: endOffset, limitedBy: utf16.endIndex),
                    let startIndex = utf16Start.samePosition(in: textBuffer),
                    let endIndex = utf16End.samePosition(in: textBuffer) {
                     text = String(textBuffer[startIndex..<endIndex])
