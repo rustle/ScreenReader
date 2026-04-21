@@ -59,10 +59,10 @@ public actor Application<ObserverType: Observer>: Controller where ObserverType.
         guard runState == .stopped else { return }
         do {
             try element.setEnhancedUserInterface(true)
-            logger.info("Set Enhanced User Interface For \(self.element.debugDescription)")
+            logger.info("Set Enhanced User Interface For \(self.elementDescriptionForLogging)")
         } catch ElementError.notImplemented {
         } catch {
-            logger.info("Error Setting Enhanced User Interface For \(self.element.debugDescription) \(error.localizedDescription)")
+            logger.error("Error Setting Enhanced User Interface For \(self.elementDescriptionForLogging)")
         }
         let observer: ApplicationObserver<ObserverType>
         let hierarchy: ControllerHierarchy<ObserverType>
@@ -330,5 +330,28 @@ extension Application where ObserverType == SystemObserver {
                 )
             }
         )
+    }
+}
+
+extension Application {
+    var elementDescriptionForLogging: String {
+        let processIdentifierDescription: String
+        do {
+            let processIdentifier = try element.processIdentifier
+            processIdentifierDescription = "(\(processIdentifier))"
+        } catch {
+            processIdentifierDescription = "(?)"
+        }
+        let description: String
+        do {
+            description = try element.title()
+        } catch {
+            do {
+                description = try element.titleUIElement().title()
+            } catch {
+                description = element.debugDescription
+            }
+        }
+        return "\(processIdentifierDescription) \(description)"
     }
 }

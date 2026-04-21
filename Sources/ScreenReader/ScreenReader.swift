@@ -166,7 +166,7 @@ extension ScreenReader {
                 } catch is CancellationError {
                     // Normal shutdown via task cancellation — no action needed.
                 } catch ServerProviderError.ignored {
-                    Loggers.logger.error("Ignored \(key.processIdentifier) \(key.bundleIdentifier)")
+                    Loggers.logger.debug("Ignored \(key.processIdentifier) \(key.bundleIdentifier)")
                 } catch {
                     Loggers.logger.error("\(error.localizedDescription)")
                 }
