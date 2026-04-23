@@ -81,7 +81,7 @@ public actor Button<ObserverType: Observer>: Controller where ObserverType.Obser
         element: ElementType,
         userInfo: [String:ObserverElementInfoValue]?
     ) async {
-        logger.debug("\(element)")
+        logger.debug("\(element.debugDescription)")
         guard let value = (try? element.value()) as? String, !value.isEmpty else { return }
         output.yield(.init(
             options: [],

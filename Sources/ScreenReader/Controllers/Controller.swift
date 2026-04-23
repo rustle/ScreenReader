@@ -97,7 +97,7 @@ extension Controller {
                         )
                     }
                 } catch {
-                    Loggers.Controller.observer.error("stream error element=\(element.description) notification=\(notification.rawValue) error=\(error.localizedDescription)")
+                    Loggers.Controller.observer.error("stream error element=\(element.debugDescription) notification=\(notification.rawValue) error=\(error.localizedDescription)")
                 }
             }
         } catch let error as ObserverError {
@@ -113,10 +113,10 @@ extension Controller {
                 if let sysElement = element as? SystemElement {
                     Loggers.Controller.observer.error("cannotComplete element=\(sysElement.debugInfo) notification=\(notification.rawValue)")
                 } else {
-                    Loggers.Controller.observer.error("cannotComplete element=\(element.description) notification=\(notification.rawValue)")
+                    Loggers.Controller.observer.error("cannotComplete element=\(element.debugDescription) notification=\(notification.rawValue)")
                 }
 #else
-                Loggers.Controller.observer.error("cannotComplete element=\(element.description) notification=\(notification.rawValue)")
+                Loggers.Controller.observer.error("cannotComplete element=\(element.debugDescription) notification=\(notification.rawValue)")
 #endif
                 throw ControllerObserverError.cannotComplete
             default:

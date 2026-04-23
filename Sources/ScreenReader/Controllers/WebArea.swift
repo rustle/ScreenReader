@@ -73,7 +73,7 @@ public actor WebArea<ObserverType: Observer>: Controller where ObserverType.Obse
         element: ElementType,
         userInfo: [String:ObserverElementInfoValue]?
     ) async {
-        logger.debug("\(element) \(String(describing: userInfo))")
+        logger.debug("\(element.debugDescription) \(String(describing: userInfo))")
     }
 }
 

@@ -159,29 +159,27 @@ public actor Application<ObserverType: Observer>: Controller where ObserverType.
         window: ElementType,
         userInfo: [String:ObserverElementInfoValue]?
     ) async {
-        logger.debug("\(window)")
         do {
             try await focus()
         } catch {
-            logger.error("\(window.description)")
+            logger.error("\(window.debugDescription)")
         }
     }
     private func focusedWindowChanged(
         element: ElementType,
         userInfo: [String:ObserverElementInfoValue]?
     ) async {
-        logger.debug("\(element)")
         do {
             try await focus()
         } catch {
-            logger.error("\(element.description)")
+            logger.error("\(element.debugDescription)")
         }
     }
     private func focusedUIElementChanged(
         element: ElementType,
         userInfo: [String:ObserverElementInfoValue]?
     ) async {
-        logger.debug("\(element.description)")
+        logger.debug("\(element.debugDescription)")
         do {
             try await focus()
         } catch {

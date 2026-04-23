@@ -83,7 +83,7 @@ public actor ControllerHierarchy<ObserverType: AccessibilityElement.Observer> wh
         bufferedOutput: AsyncStream<Output.Job>.Continuation,
         directOutput: any OutputContext
     ) async throws -> [Controller] {
-        logger.debug("\(element)")
+        logger.debug("\(element.debugDescription)")
 
         // Build path bottom-up: leaf first, root last.
         var newPathBottomUp: [Node] = []
@@ -265,17 +265,17 @@ public actor ControllerHierarchy<ObserverType: AccessibilityElement.Observer> wh
         directOutput: any OutputContext
     ) async throws -> Node {
         if let existing = nodes[element] {
-            logger.debug("Cached node for \(element)")
+            logger.debug("Cached node for \(element.debugDescription)")
             return existing
         }
         // Coalesce: if creation is already in flight for this element, await that task.
         // This closes the reentrancy window between the guard above and `nodes[element] = node`
         // below — both calls share one observer.stream() call and therefore one iterating task.
         if let pending = pendingNodes[element] {
-            logger.debug("Coalescing node creation for \(element)")
+            logger.debug("Coalescing node creation for \(element.debugDescription)")
             return try await pending.value
         }
-        logger.debug("Creating node for \(element)")
+        logger.debug("Creating node for \(element.debugDescription)")
         // The Task body inherits this actor's isolation, so it runs on our executor.
         // Storing it in pendingNodes before any await means reentrant callers see it immediately.
         let creationTask = Task<Node, any Error> { [observer, controllerFactory] in
@@ -324,7 +324,7 @@ public actor ControllerHierarchy<ObserverType: AccessibilityElement.Observer> wh
         element: ElementType,
         userInfo: [String:ObserverElementInfoValue]?
     ) async {
-        logger.debug("\(element)")
+        logger.debug("\(element.debugDescription)")
         guard let node = nodes[element] else { return }
         await removeSubtree(node)
     }
@@ -360,7 +360,7 @@ public actor ControllerHierarchy<ObserverType: AccessibilityElement.Observer> wh
                     )
                 }
             } catch {
-                self.logger.error("uiElementDestroyed stream error element=\(element.description) error=\(error.localizedDescription)")
+                self.logger.error("uiElementDestroyed stream error element=\(element.debugDescription) error=\(error.localizedDescription)")
             }
         }
     }

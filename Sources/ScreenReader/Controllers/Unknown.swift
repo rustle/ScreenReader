@@ -44,7 +44,7 @@ public actor Unknown<ObserverType: Observer>: Controller where ObserverType.Obse
         if let element = element as? SystemElement {
             cachedDebugInfo = element.debugInfo
         } else {
-            cachedDebugInfo = ["Description": element.description]
+            cachedDebugInfo = ["Description": element.debugDescription]
         }
 #endif // DEBUG
     }
