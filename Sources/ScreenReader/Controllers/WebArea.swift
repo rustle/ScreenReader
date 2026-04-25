@@ -7,6 +7,7 @@
 import AccessibilityElement
 import Foundation
 import os
+import RunLoopExecutor
 import TargetAction
 
 public actor WebArea<ObserverType: Observer>: Controller where ObserverType.ObserverElement: Hashable {

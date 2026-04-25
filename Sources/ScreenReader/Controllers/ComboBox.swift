@@ -7,6 +7,7 @@
 import AccessibilityElement
 import Foundation
 import os
+import RunLoopExecutor
 
 public actor ComboBox<ObserverType: Observer>: Controller where ObserverType.ObserverElement: Hashable {
     public typealias ElementType = ObserverType.ObserverElement

@@ -6,6 +6,7 @@
 
 import Foundation
 import os
+import RunLoopExecutorPool
 
 public enum ServerProviderError: Error {
     case ignored
@@ -15,7 +16,10 @@ public actor ServerProvider {
     private let exclusionList: Set<BundleIdentifier>
     private let inclusionList: Set<BundleIdentifier>
     private let logger: Logger
-    private let pool = AppExecutorPool()
+    private let pool = RunLoopExecutorDynamicPool(
+        name: "ScreenReader.Application",
+        qualityOfService: .userInitiated
+    )
 
     public init(dependencies: ServerProviderDependencies) {
         logger = dependencies.logger

@@ -7,6 +7,7 @@
 import AccessibilityElement
 import AppKit
 import Foundation
+import RunLoopExecutor
 
 // NSSpeechSynthesizer drives synthesis in-process on a dedicated run-loop thread
 // at .default QoS — matching the QoS of the macOS speech infrastructure to avoid
@@ -31,9 +32,9 @@ public actor SpeechInProcess: OutputContext {
     private var completionContinuations: [String: CheckedContinuation<Void, Never>] = [:]
 
     public init() {
-        let thread = RunLoopExecutor()
-        thread.name = "ScreenReader.SpeechInProcess"
-        thread.qualityOfService = .default
+        let thread = RunLoopExecutor(
+            name: "ScreenReader.SpeechInProcess"
+        )
         thread.start()
         speechThread = thread
         unownedExecutor = thread.asUnownedSerialExecutor()

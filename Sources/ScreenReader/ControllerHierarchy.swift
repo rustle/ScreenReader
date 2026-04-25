@@ -7,6 +7,7 @@
 import AccessibilityElement
 import Foundation
 import os
+import RunLoopExecutor
 
 public typealias ControllerFactory<ObserverType: AccessibilityElement.Observer> = @Sendable (
     ObserverType.ObserverElement,

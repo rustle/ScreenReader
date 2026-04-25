@@ -15,11 +15,15 @@ let package = Package(
     dependencies: [
         .package(
             url: "https://github.com/rustle/AccessibilityElement.git",
-            .upToNextMajor(from: "0.2.7")
+            .upToNextMajor(from: "0.2.9")
         ),
         .package(
             url: "https://github.com/rustle/AX.git",
             .upToNextMajor(from: "0.2.1")
+        ),
+        .package(
+            url: "https://github.com/rustle/RunLoopExecutor.git",
+            .upToNextMajor(from: "1.0.0")
         ),
         .package(
             url: "https://github.com/rustle/TargetAction.git",
@@ -32,6 +36,11 @@ let package = Package(
             dependencies: [
                 "AccessibilityElement",
                 "AX",
+                "RunLoopExecutor",
+                .product(
+                    name: "RunLoopExecutorPool",
+                    package: "RunLoopExecutor"
+                ),
                 "TargetAction",
             ]
         ),
@@ -40,7 +49,10 @@ let package = Package(
             dependencies: [
                 "ScreenReader",
                 "AccessibilityElement",
-                .product(name: "AccessibilityElementMocks", package: "AccessibilityElement"),
+                .product(
+                    name: "AccessibilityElementMocks",
+                    package: "AccessibilityElement"
+                ),
             ]
         ),
     ],

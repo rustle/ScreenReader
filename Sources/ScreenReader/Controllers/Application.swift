@@ -7,6 +7,7 @@
 import AccessibilityElement
 import Cocoa
 import os
+import RunLoopExecutor
 
 public enum ApplicationError: Error {
     case observerError(ObserverError)
