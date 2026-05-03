@@ -40,6 +40,7 @@ public actor WebArea<ObserverType: Observer>: Controller where ObserverType.Obse
     }
     public func start() async throws {
         guard runState == .stopped else { return }
+        runState = .running
         do {
             observerTasks.append(try await add(
                 notification: .selectedTextChanged,
@@ -52,6 +53,9 @@ public actor WebArea<ObserverType: Observer>: Controller where ObserverType.Obse
         }
     }
     public func stop() async throws {
+        guard runState == .running else { return }
+        runState = .stopped
+        observerTasks.forEach { $0.cancel() }
         observerTasks = []
     }
     public func output(event: ControllerOutputEvent) async throws -> [Output.Job.Payload] {
