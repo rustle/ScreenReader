@@ -30,9 +30,15 @@ import ScreenReader
 let dependencies = Dependencies(
     screenReaderDependenciesFactory: {
         ScreenReaderDependencies(
-            isTrusted: { AX.isTrusted(promptIfNeeded: $0) },
+            isTrusted: AX.isTrusted(promptIfNeeded:),
             runningApplicationsFactory: { WorkspaceRunningApplications() },
-            outputContextsFactory: { [SpeechInProcess()] }
+            focusedRunningApplicationFactory: { WorkspaceFocusedRunningApplication() },
+            outputContextsFactory: {
+                [SpeechInProcess(), Text(), Braille()]
+            },
+            commandSourcesFactory: {
+                [try KeyboardCommandSource(capsLock: CapsLock(), bindings: defaultKeyboardBindings /* This is gross, I will fix it. */) ]
+            }
         )
     },
     serverProviderDependenciesFactory: {
