@@ -6,7 +6,7 @@
 
 import Cocoa
 
-public enum ScreenReaderCommand: Sendable, Hashable {
+public enum ScreenReaderCommand: Sendable, Hashable, Codable {
     // Spatial navigation within the focused element (arrow-key style)
     case moveUp
     case moveDown
