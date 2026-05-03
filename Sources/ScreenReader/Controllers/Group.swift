@@ -47,9 +47,9 @@ public actor Group<ObserverType: Observer>: Controller where ObserverType.Observ
         runState = .stopped
     }
     public func output(event: ControllerOutputEvent) async throws -> [Output.Job.Payload] {
-        if let title = try? element.title(), !title.isEmpty {
+        if let title = try? await element.title(), !title.isEmpty {
             return [.speech(title, nil)]
-        } else if let titleUIElement = try? element.titleUIElement(), let title = try? titleUIElement.title(), !title.isEmpty {
+        } else if let titleUIElement = try? await element.titleUIElement(), let title = try? await titleUIElement.title(), !title.isEmpty {
             return [.speech(title, nil)]
         }
         return []

@@ -36,7 +36,7 @@ public actor SystemWide: Controller {
     public func start() async throws {
         observationTask = Task { [self] in
             for await workspacePID in focusedRunningApplication.stream {
-                handleFocusChange(workspacePID: workspacePID)
+                await handleFocusChange(workspacePID: workspacePID)
             }
         }
     }
@@ -49,11 +49,11 @@ public actor SystemWide: Controller {
 
     /// Polls the system-wide AX element for the focused UI element's owning PID.
     /// Falls back to the workspace PID if AX polling fails (e.g. no focused element).
-    private func handleFocusChange(workspacePID: pid_t) {
+    private func handleFocusChange(workspacePID: pid_t) async {
         let pid: pid_t
         do {
-            let focusedUIElement = try element.focusedUIElement()
-            pid = try focusedUIElement.processIdentifier
+            let focusedUIElement = try await element.focusedUIElement()
+            pid = try await focusedUIElement.processIdentifier
             logger.debug("AX focused pid=\(pid) workspacePID=\(workspacePID)")
         } catch {
             logger.debug("AX poll failed (\(error.localizedDescription)), using workspace pid=\(workspacePID)")

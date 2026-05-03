@@ -64,15 +64,15 @@ public actor TextField<ObserverType: Observer>: Controller where ObserverType.Ob
     }
     public func output(event: ControllerOutputEvent) async throws -> [Output.Job.Payload] {
         var parts = [String]()
-        if let title = try? element.title(), !title.isEmpty {
+        if let title = try? await element.title(), !title.isEmpty {
             parts.append(title)
-        } else if let titleUIElement = try? element.titleUIElement(), let title = try? titleUIElement.title(), !title.isEmpty {
+        } else if let titleUIElement = try? await element.titleUIElement(), let title = try? await titleUIElement.title(), !title.isEmpty {
             parts.append(title)
         }
-        if let roleDescription = try? element.roleDescription() {
+        if let roleDescription = try? await element.roleDescription() {
             parts.append(roleDescription)
         }
-        if let value = (try? element.value()) as? String, !value.isEmpty {
+        if let value = (try? await element.value()) as? String, !value.isEmpty {
             parts.append(value)
         }
         guard !parts.isEmpty else { return [] }
@@ -94,9 +94,9 @@ public actor TextField<ObserverType: Observer>: Controller where ObserverType.Ob
     }
     private func valueChanged(
         element: ElementType,
-        userInfo: [String:ObserverElementInfoValue]?
+        userInfo: [String:SystemElementValueContainer]?
     ) async {
-        guard let value = (try? element.value()) as? String else { return }
+        guard let value = (try? await element.value()) as? String else { return }
         output.yield(.init(
             options: [],
             identifier: "",
@@ -105,7 +105,7 @@ public actor TextField<ObserverType: Observer>: Controller where ObserverType.Ob
     }
     private func selectedTextChanged(
         element: ElementType,
-        userInfo: [String:ObserverElementInfoValue]?
+        userInfo: [String:SystemElementValueContainer]?
     ) async {
     }
 }

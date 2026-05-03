@@ -10,16 +10,21 @@ let package = Package(
     products: [
         .library(
             name: "ScreenReader",
-            targets: ["ScreenReader"]),
+            targets: ["ScreenReader"]
+        ),
     ],
     dependencies: [
         .package(
             url: "https://github.com/rustle/AccessibilityElement.git",
-            .upToNextMajor(from: "0.2.9")
+            .upToNextMajor(from: "0.2.13")
         ),
         .package(
             url: "https://github.com/rustle/AX.git",
-            .upToNextMajor(from: "0.2.1")
+            .upToNextMajor(from: "0.2.2")
+        ),
+        .package(
+            url: "https://github.com/rustle/Braille.git",
+            .upToNextMajor(from: "1.0.0")
         ),
         .package(
             url: "https://github.com/rustle/RunLoopExecutor.git",
@@ -36,6 +41,7 @@ let package = Package(
             dependencies: [
                 "AccessibilityElement",
                 "AX",
+                "Braille",
                 "RunLoopExecutor",
                 .product(
                     name: "RunLoopExecutorPool",

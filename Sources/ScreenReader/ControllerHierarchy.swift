@@ -91,7 +91,7 @@ public actor ControllerHierarchy<ObserverType: AccessibilityElement.Observer> wh
         do {
             var current: ElementType?
             do {
-                current = try element.focusedUIElement()
+                current = try await element.focusedUIElement()
             } catch {
                 current = element
             }
@@ -101,7 +101,7 @@ public actor ControllerHierarchy<ObserverType: AccessibilityElement.Observer> wh
                     bufferedOutput: bufferedOutput,
                     directOutput: directOutput
                 ))
-                current = try? c.parent()
+                current = try? await c.parent()
             }
         } catch {
             logger.error("\(error.localizedDescription)")
@@ -323,7 +323,7 @@ public actor ControllerHierarchy<ObserverType: AccessibilityElement.Observer> wh
 
     private func uiElementDestroyed(
         element: ElementType,
-        userInfo: [String:ObserverElementInfoValue]?
+        userInfo: [String:SystemElementValueContainer]?
     ) async {
         logger.debug("\(element.debugDescription)")
         guard let node = nodes[element] else { return }

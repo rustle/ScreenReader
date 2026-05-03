@@ -62,12 +62,12 @@ public actor List<ObserverType: Observer>: Controller where ObserverType.Observe
     }
     public func output(event: ControllerOutputEvent) async throws -> [Output.Job.Payload] {
         var parts = [String]()
-        if let title = try? element.title(), !title.isEmpty {
+        if let title = try? await element.title(), !title.isEmpty {
             parts.append(title)
-        } else if let titleUIElement = try? element.titleUIElement(), let title = try? titleUIElement.title(), !title.isEmpty {
+        } else if let titleUIElement = try? await element.titleUIElement(), let title = try? await titleUIElement.title(), !title.isEmpty {
             parts.append(title)
         }
-        if let roleDescription = try? element.roleDescription() {
+        if let roleDescription = try? await element.roleDescription() {
             parts.append(roleDescription)
         }
         guard !parts.isEmpty else { return [] }
@@ -84,21 +84,32 @@ public actor List<ObserverType: Observer>: Controller where ObserverType.Observe
     }
     private func selectedChildrenChanged(
         element: ElementType,
-        userInfo: [String:ObserverElementInfoValue]?
+        userInfo: [String:SystemElementValueContainer]?
     ) async {
         do {
-            let selected = try element.selectedChildren()
-            let titles = selected
-                .compactMap {
-                    try? $0.title()
+            let selected = element.selectedChildrenView()
+            let count = try await selected.count()
+            guard count > 0 else { return }
+            let text: String
+            if count < 10 {
+                var titles: [String] = []
+                for item in try await selected.elements(index: 0, maxCount: count) {
+                    if let title = try? await item.title(), !title.isEmpty {
+                        titles.append(title)
+                    }
                 }
-                .filter {
-                    !$0.isEmpty
+                guard !titles.isEmpty else {
+                    // TODO: Fallback descriptions for item selection when title is not available
+                    return
                 }
-            guard !titles.isEmpty else { return }
-            let text = titles.count == 1
-                ? titles[0]
-                : "\(titles.joined(separator: ", ")), \(selected.count) items"
+                // TODO: Localize
+                text = titles.count == 1
+                    ? titles[0]
+                    : "\(titles.joined(separator: ", ")), \(count) items"
+            } else {
+                // TODO: Localize
+                text = "\(count) item\(count == 1 ? "" : "s") selected"
+            }
             output.yield(.init(
                 options: [],
                 identifier: "",

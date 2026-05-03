@@ -59,7 +59,7 @@ public actor WebArea<ObserverType: Observer>: Controller where ObserverType.Obse
         observerTasks = []
     }
     public func output(event: ControllerOutputEvent) async throws -> [Output.Job.Payload] {
-        if let roleDescription = try? element.roleDescription() {
+        if let roleDescription = try? await element.roleDescription() {
             return [.speech(roleDescription, nil)]
         }
         return []
@@ -76,7 +76,7 @@ public actor WebArea<ObserverType: Observer>: Controller where ObserverType.Obse
     @Sendable
     private func selectedTextChanged(
         element: ElementType,
-        userInfo: [String:ObserverElementInfoValue]?
+        userInfo: [String:SystemElementValueContainer]?
     ) async {
         logger.debug("\(element.debugDescription) \(String(describing: userInfo))")
     }

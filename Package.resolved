@@ -1,13 +1,13 @@
 {
-  "originHash" : "71bdd8117764d15121cb5942eec5e6e307d7d46842dd9adb844f5f3f59f5c002",
+  "originHash" : "f9be3f14a5eaf40b96c95b855a22eb51799771562ba83dd0a77cc3ede4135586",
   "pins" : [
     {
       "identity" : "accessibilityelement",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/rustle/AccessibilityElement.git",
       "state" : {
-        "revision" : "cb4b42cbc8fc795c25ada291d534aa0ff1c621a7",
-        "version" : "0.2.9"
+        "revision" : "0aade45557de506cb77e077d388f255ee133d3eb",
+        "version" : "0.2.13"
       }
     },
     {
@@ -15,8 +15,17 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/rustle/AX.git",
       "state" : {
-        "revision" : "cacb8833a5f687d6d342f7bb4695274eb2f9f9b3",
-        "version" : "0.2.1"
+        "revision" : "7e3cdb2692fbfbe90020a398247f78f6d2b1c6ae",
+        "version" : "0.2.2"
+      }
+    },
+    {
+      "identity" : "braille",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/rustle/Braille.git",
+      "state" : {
+        "revision" : "70131a6b037990d5f796b8176af7ebc3e5f1b897",
+        "version" : "1.0.2"
       }
     },
     {

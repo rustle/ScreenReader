@@ -1,6 +1,7 @@
 import Testing
 import AccessibilityElement
 import AccessibilityElementMocks
+import RunLoopExecutor
 @testable import ScreenReader
 
 // MARK: - Helpers
@@ -32,7 +33,7 @@ struct TextAreaReadAllTests {
 
         try await textArea.readAll()
 
-        // The readAll task exits before its first await (guard totalChars > 0
+        // The readAll task exits before its first await (guard totalCharacters > 0
         // else { return }), so one yield is sufficient to let it run to
         // completion before we check that nothing was submitted.
         await Task.yield()
@@ -42,8 +43,8 @@ struct TextAreaReadAllTests {
     @Test("Single line speaks the text with interrupt")
     func singleLine() async throws {
         let element = MockElement(storage: [.numberOfCharacters: 5])
-        element.lineForIndexHandler = { _ in 0 }
-        element.rangeForLineHandler = { _ in 0..<5 }
+        element.lineForIndexHandler = { _, _ in 0 }
+        element.rangeForLineHandler = { _, _ in 0..<5 }
         element.stringForHandler = { _ in "Hello" }
         let recording = RecordingOutputContext()
         let textArea = try await makeTextArea(element: element, recording: recording)
@@ -70,8 +71,12 @@ struct TextAreaReadAllTests {
     func multipleLines() async throws {
         // "Hello\n" occupies range 0..<6; "World" occupies 6..<11.
         let element = MockElement(storage: [.numberOfCharacters: 11])
-        element.lineForIndexHandler = { index in index < 6 ? 0 : 1 }
-        element.rangeForLineHandler = { line in line == 0 ? 0..<6 : 6..<11 }
+        element.lineForIndexHandler = { _, index in
+            index < 6 ? 0 : 1
+        }
+        element.rangeForLineHandler = { _, line in
+            line == 0 ? 0..<6 : 6..<11
+        }
         element.stringForHandler = { range in
             switch range {
             case 0..<6: return "Hello\n"
@@ -104,12 +109,16 @@ struct TextAreaReadAllTests {
     func blankLinesSkipped() async throws {
         // "Hello\n" (0..<6), "\n" (6..<7, blank), "World" (7..<12)
         let element = MockElement(storage: [.numberOfCharacters: 12])
-        element.lineForIndexHandler = { index in
-            if index < 6 { return 0 }
-            if index < 7 { return 1 }
+        element.lineForIndexHandler = { _, index in
+            if index < 6 {
+                return 0
+            }
+            if index < 7 {
+                return 1
+            }
             return 2
         }
-        element.rangeForLineHandler = { line in
+        element.rangeForLineHandler = { _, line in
             switch line {
             case 0: return 0..<6
             case 1: return 6..<7

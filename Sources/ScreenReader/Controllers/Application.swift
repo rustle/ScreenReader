@@ -60,11 +60,11 @@ public actor Application<ObserverType: Observer>: Controller where ObserverType.
         guard runState == .stopped else { return }
         runState = .running
         do {
-            try element.setEnhancedUserInterface(true)
-            logger.info("Set Enhanced User Interface For \(self.elementDescriptionForLogging)")
+            try await element.setEnhancedUserInterface(true)
+            logger.info("Set Enhanced User Interface For \(self.element.debugDescription)")
         } catch ElementError.notImplemented {
         } catch {
-            logger.error("Error Setting Enhanced User Interface For \(self.elementDescriptionForLogging)")
+            logger.error("Error Setting Enhanced User Interface For \(self.element.debugDescription)")
         }
         let observer: ApplicationObserver<ObserverType>
         let hierarchy: ControllerHierarchy<ObserverType>
@@ -120,7 +120,7 @@ public actor Application<ObserverType: Observer>: Controller where ObserverType.
         } catch {
             logger.error("\(error.localizedDescription)")
         }
-        for window in try element.windows() {
+        for window in try await element.windows() {
             do {
                 try await hierarchy.controller(
                     element: window,
@@ -139,7 +139,7 @@ public actor Application<ObserverType: Observer>: Controller where ObserverType.
         }
         do {
             await focusedUIElementChanged(
-                element: try element.focusedUIElement(),
+                element: try await element.focusedUIElement(),
                 userInfo: nil
             )
         } catch ElementError.noValue {
@@ -153,13 +153,14 @@ public actor Application<ObserverType: Observer>: Controller where ObserverType.
         guard let observer = observer else { return }
         try await observer.stop()
         self.observer = nil
+        observerTasks.forEach { $0.cancel() }
         observerTasks = []
         jobsTask?.cancel()
         jobsTask = nil
     }
     private func windowCreated(
         window: ElementType,
-        userInfo: [String:ObserverElementInfoValue]?
+        userInfo: [String:SystemElementValueContainer]?
     ) async {
         do {
             try await focus()
@@ -169,7 +170,7 @@ public actor Application<ObserverType: Observer>: Controller where ObserverType.
     }
     private func focusedWindowChanged(
         element: ElementType,
-        userInfo: [String:ObserverElementInfoValue]?
+        userInfo: [String:SystemElementValueContainer]?
     ) async {
         do {
             try await focus()
@@ -179,7 +180,7 @@ public actor Application<ObserverType: Observer>: Controller where ObserverType.
     }
     private func focusedUIElementChanged(
         element: ElementType,
-        userInfo: [String:ObserverElementInfoValue]?
+        userInfo: [String:SystemElementValueContainer]?
     ) async {
         logger.debug("\(element.debugDescription)")
         do {
@@ -191,7 +192,7 @@ public actor Application<ObserverType: Observer>: Controller where ObserverType.
     public func focus() async throws {
         guard let hierarchy else { return }
         do {
-            let focusedUIElement = try element.focusedUIElement()
+            let focusedUIElement = try await element.focusedUIElement()
             focus = try await hierarchy.focus(
                 application: element,
                 element: focusedUIElement,
@@ -216,15 +217,14 @@ public actor Application<ObserverType: Observer>: Controller where ObserverType.
 }
 
 extension Application {
-    @Sendable
-    fileprivate static func controller(
+    public static func controller(
         element: ElementType,
         bufferedOutput: AsyncStream<Output.Job>.Continuation,
         directOutput: any OutputContext,
         observer: ApplicationObserver<ObserverType>,
         executor: RunLoopExecutor
     ) async throws -> Controller {
-        switch try element.role() {
+        switch try await element.role() {
         case .button:
             try await Button(
                 element: element,
@@ -330,28 +330,5 @@ extension Application where ObserverType == SystemObserver {
                 )
             }
         )
-    }
-}
-
-extension Application {
-    var elementDescriptionForLogging: String {
-        let processIdentifierDescription: String
-        do {
-            let processIdentifier = try element.processIdentifier
-            processIdentifierDescription = "(\(processIdentifier))"
-        } catch {
-            processIdentifierDescription = "(?)"
-        }
-        let description: String
-        do {
-            description = try element.title()
-        } catch {
-            do {
-                description = try element.titleUIElement().title()
-            } catch {
-                description = element.debugDescription
-            }
-        }
-        return "\(processIdentifierDescription) \(description)"
     }
 }

@@ -9,15 +9,23 @@ import Cocoa
 import os
 import RunLoopExecutor
 
-public enum ControllerOutputEvent: Sendable {
+public enum ControllerOutputEvent: Codable, Sendable {
+    ///
     case focusThrough
+    ///
     case focusIn
+    ///
     case focusOut
 }
 
 public protocol Controller: Actor {
-    var identifier: AnyHashable { get async }
+    ///
+    var identifier: AnyHashable { get }
+    ///
+    func transportRepresentation() throws -> Data?
+    ///
     func start() async throws
+    ///
     func stop() async throws
     /// Called when this controller becomes the focused leaf of the focus chain.
     func focus() async throws
@@ -37,6 +45,9 @@ public protocol Controller: Actor {
 }
 
 extension Controller {
+    public func transportRepresentation() throws -> Data? {
+        nil
+    }
     public func focus() async throws {}
     public func unfocus() async throws {}
     public func output(event: ControllerOutputEvent) async throws -> [Output.Job.Payload] { [] }

@@ -15,14 +15,14 @@ protocol ObserverHosting: Controller {
     @Sendable
     func add(
         notification: NSAccessibility.Notification,
-        handler: @escaping @Sendable (ElementType, [String:ObserverElementInfoValue]?) async -> Void
+        handler: @escaping @Sendable (ElementType, [String:SystemElementValueContainer]?) async -> Void
     ) async throws -> Task<Void, any Error>
 }
 
 extension ObserverHosting {
     func add(
         notification: NSAccessibility.Notification,
-        handler: @escaping @Sendable (ElementType, [String:ObserverElementInfoValue]?) async -> Void
+        handler: @escaping @Sendable (ElementType, [String:SystemElementValueContainer]?) async -> Void
     ) async throws -> Task<Void, any Error> {
         try await Self.add(
             observer: observer,

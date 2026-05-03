@@ -43,15 +43,15 @@ public actor ComboBox<ObserverType: Observer>: Controller where ObserverType.Obs
     }
     public func output(event: ControllerOutputEvent) async throws -> [Output.Job.Payload] {
         var parts = [String]()
-        if let title = try? element.title(), !title.isEmpty {
+        if let title = try? await element.title(), !title.isEmpty {
             parts.append(title)
-        } else if let titleUIElement = try? element.titleUIElement(), let title = try? titleUIElement.title(), !title.isEmpty {
+        } else if let titleUIElement = try? await element.titleUIElement(), let title = try? await titleUIElement.title(), !title.isEmpty {
             parts.append(title)
         }
-        if let roleDescription = try? element.roleDescription() {
+        if let roleDescription = try? await element.roleDescription() {
             parts.append(roleDescription)
         }
-        if let value = (try? element.value()) as? String, !value.isEmpty {
+        if let value = (try? await element.value()) as? String, !value.isEmpty {
             parts.append(value)
         }
         guard !parts.isEmpty else { return [] }

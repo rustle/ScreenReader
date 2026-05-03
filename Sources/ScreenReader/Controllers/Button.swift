@@ -53,12 +53,12 @@ public actor Button<ObserverType: Observer>: Controller where ObserverType.Obser
     }
     public func output(event: ControllerOutputEvent) async throws -> [Output.Job.Payload] {
         var parts = [String]()
-        if let title = try? element.title(), !title.isEmpty {
+        if let title = try? await element.title(), !title.isEmpty {
             parts.append(title)
-        } else if let titleUIElement = try? element.titleUIElement(), let title = try? titleUIElement.title(), !title.isEmpty {
+        } else if let titleUIElement = try? await element.titleUIElement(), let title = try? await titleUIElement.title(), !title.isEmpty {
             parts.append(title)
         }
-        if let roleDescription = try? element.roleDescription() {
+        if let roleDescription = try? await element.roleDescription() {
             parts.append(roleDescription)
         }
         guard !parts.isEmpty else { return [] }
@@ -80,10 +80,10 @@ public actor Button<ObserverType: Observer>: Controller where ObserverType.Obser
     }
     private func valueChanged(
         element: ElementType,
-        userInfo: [String:ObserverElementInfoValue]?
+        userInfo: [String:SystemElementValueContainer]?
     ) async {
         logger.debug("\(element.debugDescription)")
-        guard let value = (try? element.value()) as? String, !value.isEmpty else { return }
+        guard let value = (try? await element.value()) as? String, !value.isEmpty else { return }
         output.yield(.init(
             options: [],
             identifier: "",
