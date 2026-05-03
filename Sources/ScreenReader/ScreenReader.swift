@@ -52,6 +52,7 @@ public actor ScreenReader {
     }
 
     public func start() async throws {
+        try await output.connect()
         runningApplicationsTask?.cancel()
         let runningApplications = try await dependencies.runningApplicationsFactory()
         runningApplicationsTask = await runningApplications
@@ -101,6 +102,7 @@ public actor ScreenReader {
     }
 
     public func stop() async throws {
+        try await output.disconnect()
         focusedApplicationTask?.cancel()
         focusedApplicationTask = nil
         try? await systemWide?.stop()
