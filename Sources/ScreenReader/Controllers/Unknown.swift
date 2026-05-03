@@ -41,6 +41,7 @@ public actor Unknown<ObserverType: Observer>: Controller where ObserverType.Obse
     }
     public func start() async throws {
         guard runState == .stopped else { return }
+        runState = .running
 #if DEBUG
         if let element = element as? SystemElement {
             cachedDebugInfo = element.debugInfo
@@ -72,6 +73,9 @@ public actor Unknown<ObserverType: Observer>: Controller where ObserverType.Obse
         ))
     }
     public func stop() async throws {
+        guard runState == .running else { return }
+        runState = .stopped
+        observerTasks.forEach { $0.cancel() }
         observerTasks = []
     }
 }
