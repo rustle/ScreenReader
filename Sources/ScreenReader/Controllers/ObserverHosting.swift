@@ -20,7 +20,6 @@ protocol ObserverHosting: Controller {
 }
 
 extension ObserverHosting {
-    @Sendable
     func add(
         notification: NSAccessibility.Notification,
         handler: @escaping @Sendable (ElementType, [String:ObserverElementInfoValue]?) async -> Void
@@ -29,7 +28,8 @@ extension ObserverHosting {
             observer: observer,
             element: element,
             notification: notification,
-            handler: handler
+            handler: handler,
+            isolation: #isolation
         )
     }
 }

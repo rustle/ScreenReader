@@ -79,19 +79,19 @@ enum RunState {
 }
 
 extension Controller {
-    @Sendable
     static func add<ObserverType: Observer>(
         observer: ApplicationObserver<ObserverType>,
         element: ObserverType.ObserverElement,
         notification: NSAccessibility.Notification,
-        handler: @escaping @Sendable (ObserverType.ObserverElement, [String:ObserverElementInfoValue]?) async -> Void
+        handler: @escaping @Sendable (ObserverType.ObserverElement, [String:SystemElementValueContainer]?) async -> Void,
+        isolation: isolated (any Actor)? = #isolation
     ) async throws -> Task<Void, any Error> {
         do {
             let stream = try await observer.stream(
                 element: element,
                 notification: notification
             )
-            return Task(priority: .userInitiated) {
+            return Task {
                 do {
                     for try await notification in stream {
                         await handler(
