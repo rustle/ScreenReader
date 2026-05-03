@@ -58,6 +58,7 @@ public actor Application<ObserverType: Observer>: Controller where ObserverType.
     }
     public func start() async throws {
         guard runState == .stopped else { return }
+        runState = .running
         do {
             try element.setEnhancedUserInterface(true)
             logger.info("Set Enhanced User Interface For \(self.elementDescriptionForLogging)")
@@ -145,10 +146,10 @@ public actor Application<ObserverType: Observer>: Controller where ObserverType.
         } catch {
             logger.error("\(error.localizedDescription)")
         }
-        runState = .running
     }
     public func stop() async throws {
         guard runState == .running else { return }
+        runState = .stopped
         guard let observer = observer else { return }
         try await observer.stop()
         self.observer = nil
