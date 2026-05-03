@@ -1,11 +1,11 @@
 //
-//  File.swift
+//  ServerProviderDependencies.swift
 //
 //  Copyright © 2017-2026 Doug Russell. All rights reserved.
 //
 
 import Foundation
-@preconcurrency import os
+import os
 
 public struct ServerProviderDependencies: Sendable {
     public let logger = Logger(
