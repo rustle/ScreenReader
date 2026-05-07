@@ -110,13 +110,15 @@ public actor ControllerHierarchy<ObserverType: AccessibilityElement.Observer> wh
 
         // Establish parent-child links among the newly created/visited nodes.
         // newPathBottomUp[0] is the leaf; newPathBottomUp[i+1] is its parent.
-        for i in 0..<(newPathBottomUp.count - 1) {
-            let childNode = newPathBottomUp[i]
-            let parentNode = newPathBottomUp[i + 1]
-            if childNode.parent !== parentNode {
-                childNode.parent = parentNode
-                parentNode.children[childNode.element] = childNode
-                await childNode.controller.setParent(parentNode.controller)
+        if newPathBottomUp.count > 1 {
+            for i in 0..<(newPathBottomUp.count - 1) {
+                let childNode = newPathBottomUp[i]
+                let parentNode = newPathBottomUp[i + 1]
+                if childNode.parent !== parentNode {
+                    childNode.parent = parentNode
+                    parentNode.children[childNode.element] = childNode
+                    await childNode.controller.setParent(parentNode.controller)
+                }
             }
         }
 
