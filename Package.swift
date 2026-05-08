@@ -24,7 +24,7 @@ let package = Package(
         ),
         .package(
             url: "https://github.com/rustle/Braille.git",
-            .upToNextMajor(from: "1.0.0")
+            .upToNextMajor(from: "1.0.5")
         ),
         .package(
             url: "https://github.com/rustle/RunLoopExecutor.git",
