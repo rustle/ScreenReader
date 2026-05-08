@@ -24,7 +24,7 @@ extension OutputContext {
 }
 
 public actor Output: OutputContext {
-    public struct Options: OptionSet, Sendable {
+    public struct Options: Codable, OptionSet, Sendable {
         public let rawValue: Int
         public static let interrupt = Options(rawValue: 1 << 0)
         public static let byCharacter = Options(rawValue: 1 << 1)
@@ -35,7 +35,7 @@ public actor Output: OutputContext {
     public struct Job: Sendable {
         public let options: Options
         public let identifier: String
-        public enum Payload: Sendable {
+        public enum Payload: Codable, Sendable {
             case pauseSpeech
             case continueSpeech
             case cancelSpeech
