@@ -17,7 +17,7 @@ struct TextAreaSelectedTextChangedTests {
             .numberOfCharacters: 5,
             .selectedTextRange: 0..<0,
         ])
-        element.lineForIndexHandler = { _ in 0 }
+        element.lineForIndexHandler = { _, _ in 0 }
         element.stringForHandler = { range in
             if range == 0..<1 { return "H" }
             if range == 0..<5 { return "Hello" }
@@ -29,7 +29,7 @@ struct TextAreaSelectedTextChangedTests {
         try await textArea.focus()
         try await textArea.start()
 
-        element.set(1..<1, for: .selectedTextRange)
+        try element.setAttribute(1..<1, for: .selectedTextRange)
 
         source.emit(.selectedTextChanged, element: element)
 
@@ -59,7 +59,7 @@ struct TextAreaSelectedTextChangedTests {
             .numberOfCharacters: 5,
             .selectedTextRange: 2..<2,
         ])
-        element.lineForIndexHandler = { _ in 0 }
+        element.lineForIndexHandler = { _, _ in 0 }
         element.stringForHandler = { range in
             if range == 2..<4 { return "👋" }
             if range == 0..<5 { return "Hi👋!" }
@@ -71,7 +71,7 @@ struct TextAreaSelectedTextChangedTests {
         try await textArea.focus()
         try await textArea.start()
 
-        element.set(4..<4, for: .selectedTextRange)
+        try element.setAttribute(4..<4, for: .selectedTextRange)
 
         source.emit(.selectedTextChanged, element: element)
 
@@ -105,8 +105,8 @@ struct TextAreaSelectedTextChangedTests {
         try await textArea.focus()
         try await textArea.start()
 
-        element.set(0..<5, for: .selectedTextRange)
-        element.set("Hello", for: .selectedText)
+        try element.setAttribute(0..<5, for: .selectedTextRange)
+        try element.setAttribute("Hello", for: .selectedText)
 
         source.emit(.selectedTextChanged, element: element)
 
@@ -132,8 +132,8 @@ struct TextAreaSelectedTextChangedTests {
             .numberOfCharacters: 11,
             .selectedTextRange: 0..<0,
         ])
-        element.lineForIndexHandler = { index in index < 6 ? 0 : 1 }
-        element.rangeForLineHandler = { line in line == 0 ? 0..<6 : 6..<11 }
+        element.lineForIndexHandler = { _, index in index < 6 ? 0 : 1 }
+        element.rangeForLineHandler = { _, line in line == 0 ? 0..<6 : 6..<11 }
         element.stringForHandler = { range in
             if range == 6..<11 { return "World" }
             if range == 0..<11 { return "Hello\nWorld" }
@@ -146,7 +146,7 @@ struct TextAreaSelectedTextChangedTests {
         try await textArea.start()
 
         // Simulate pressing ↓: caret moves from 0 (line 0) to 6 (line 1).
-        element.set(6..<6, for: .selectedTextRange)
+        try element.setAttribute(6..<6, for: .selectedTextRange)
 
         source.emit(.selectedTextChanged, element: element)
 
@@ -173,12 +173,12 @@ struct TextAreaSelectedTextChangedTests {
             .numberOfCharacters: 12,
             .selectedTextRange: 0..<0,
         ])
-        element.lineForIndexHandler = { index in
+        element.lineForIndexHandler = { _, index in
             if index < 6 { return 0 }
             if index < 7 { return 1 }
             return 2
         }
-        element.rangeForLineHandler = { line in
+        element.rangeForLineHandler = { _, line in
             switch line {
             case 0: return 0..<6
             case 1: return 6..<7
@@ -197,7 +197,7 @@ struct TextAreaSelectedTextChangedTests {
         try await textArea.start()
 
         // Simulate pressing ↓: caret moves from 0 (line 0) to 6 (line 1, blank).
-        element.set(6..<6, for: .selectedTextRange)
+        try element.setAttribute(6..<6, for: .selectedTextRange)
 
         source.emit(.selectedTextChanged, element: element)
 

@@ -42,8 +42,8 @@ struct TextAreaScrollToVisibleTests {
     func readAllScrollsEachLine() async throws {
         let scrolled = OSAllocatedUnfairLock<[Range<Int>]>(initialState: [])
         let element = MockElement(storage: [.numberOfCharacters: 11])
-        element.lineForIndexHandler = { index in index < 6 ? 0 : 1 }
-        element.rangeForLineHandler = { line in line == 0 ? 0..<6 : 6..<11 }
+        element.lineForIndexHandler = { _, index in index < 6 ? 0 : 1 }
+        element.rangeForLineHandler = { _, line in line == 0 ? 0..<6 : 6..<11 }
         element.stringForHandler = { range in
             switch range {
             case 0..<6: return "Hello\n"

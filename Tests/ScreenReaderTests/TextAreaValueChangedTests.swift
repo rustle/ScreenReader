@@ -7,6 +7,7 @@
 import Testing
 import AccessibilityElement
 import AccessibilityElementMocks
+import RunLoopExecutor
 @testable import ScreenReader
 
 // MARK: - Helpers
@@ -17,8 +18,6 @@ func makeTextArea(
     element: MockElement,
     source: MockNotificationSource
 ) async throws -> (TextArea<MockObserver>, AsyncStream<Output.Job>) {
-    let executor = RunLoopExecutor()
-    executor.start()
     let (jobs, buffered) = AsyncStream<Output.Job>.makeStream()
     let textArea = try await TextArea(
         element: element,
@@ -27,7 +26,7 @@ func makeTextArea(
             bufferedOutput: buffered
         ),
         observer: ApplicationObserver(observer: MockObserver(source: source)),
-        executor: executor
+        executor: TestExecutorPool.shared.next()
     )
     return (textArea, jobs)
 }
@@ -54,8 +53,8 @@ struct TextAreaValueChangedTests {
         try await textArea.start()
 
         // Simulate typing 'W': "Hello" → "HelloW", caret advances to 6
-        element.set(6, for: .numberOfCharacters)
-        element.set(6..<6, for: .selectedTextRange)
+        try element.setAttribute(6, for: .numberOfCharacters)
+        try element.setAttribute(6..<6, for: .selectedTextRange)
         element.stringForHandler = { range in
             switch range {
             case 0..<5: return "Hello"
@@ -99,8 +98,8 @@ struct TextAreaValueChangedTests {
         try await textArea.start()
 
         // Simulate pressing backspace: "Hello" → "Hell", caret retreats to 4
-        element.set(4, for: .numberOfCharacters)
-        element.set(4..<4, for: .selectedTextRange)
+        try element.setAttribute(4, for: .numberOfCharacters)
+        try element.setAttribute(4..<4, for: .selectedTextRange)
 
         source.emit(.valueChanged, element: element)
 
@@ -139,8 +138,8 @@ struct TextAreaValueChangedTests {
 
         // Simulate deleting 👋: "Hi👋!" → "Hi!", caret moves from 5 to 2.
         // AX delta = -2 (two UTF-16 units removed), deletedStart = 2.
-        element.set(3, for: .numberOfCharacters)
-        element.set(2..<2, for: .selectedTextRange)
+        try element.setAttribute(3, for: .numberOfCharacters)
+        try element.setAttribute(2..<2, for: .selectedTextRange)
 
         source.emit(.valueChanged, element: element)
 

@@ -10,14 +10,12 @@ func makeTextArea(
     element: MockElement,
     recording: RecordingOutputContext
 ) async throws -> TextArea<MockObserver> {
-    let executor = RunLoopExecutor()
-    executor.start()
     let (_, buffered) = AsyncStream<Output.Job>.makeStream()
     return try await TextArea(
         element: element,
         output: .init(directOutput: recording, bufferedOutput: buffered),
         observer: ApplicationObserver(observer: MockObserver()),
-        executor: executor
+        executor: TestExecutorPool.shared.next()
     )
 }
 

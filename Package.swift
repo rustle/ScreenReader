@@ -55,6 +55,11 @@ let package = Package(
             dependencies: [
                 "ScreenReader",
                 "AccessibilityElement",
+                "RunLoopExecutor",
+                .product(
+                    name: "RunLoopExecutorPool",
+                    package: "RunLoopExecutor"
+                ),
                 .product(
                     name: "AccessibilityElementMocks",
                     package: "AccessibilityElement"
