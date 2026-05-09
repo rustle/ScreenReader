@@ -1,5 +1,5 @@
 {
-  "originHash" : "f9be3f14a5eaf40b96c95b855a22eb51799771562ba83dd0a77cc3ede4135586",
+  "originHash" : "a53c2c9fff481539b7d79b2d89483ca367c691f9dcca6f5e595b119c58ef2547",
   "pins" : [
     {
       "identity" : "accessibilityelement",
@@ -24,8 +24,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/rustle/Braille.git",
       "state" : {
-        "revision" : "70131a6b037990d5f796b8176af7ebc3e5f1b897",
-        "version" : "1.0.2"
+        "revision" : "bc03220ebc5e51dc18ef3b7628dbc8bb41bc6802",
+        "version" : "1.0.5"
       }
     },
     {
