@@ -40,21 +40,27 @@ public actor Table<ObserverType: Observer>: Controller where ObserverType.Observ
     }
     public func start() async throws {
         guard runState == .stopped else { return }
-        try await _add(
-            notification: .selectedRowsChanged,
-            handler: target(action: Table<ObserverType>.selectionChanged)
-        )
-        try await _add(
-            notification: .selectedColumnsChanged,
-            handler: target(action: Table<ObserverType>.selectionChanged)
-        )
+        runState = .starting
+        do {
+            try await add(
+                notification: .selectedRowsChanged,
+                handler: target(action: Table<ObserverType>.selectionChanged)
+            )
+            try await add(
+                notification: .selectedColumnsChanged,
+                handler: target(action: Table<ObserverType>.selectionChanged)
+            )
+        } catch {
+            runState = .stopped
+            throw error
+        }
         runState = .running
         await selectionChanged(
             element: element,
             userInfo: nil
         )
     }
-    private func _add(
+    private func add(
         notification: NSAccessibility.Notification,
         handler: @escaping @Sendable (ObserverType.ObserverElement, [String:SystemElementValueContainer]?) async -> Void
     ) async throws {
@@ -95,7 +101,9 @@ public actor Table<ObserverType: Observer>: Controller where ObserverType.Observ
     }
     public func stop() async throws {
         guard runState == .running else { return }
-        observerTasks = []
+        runState = .stopping
+        observerTasks.forEach { $0.cancel() }
+        observerTasks.removeAll()
         runState = .stopped
     }
     private func selectionChanged(

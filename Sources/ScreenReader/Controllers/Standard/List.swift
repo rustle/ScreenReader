@@ -39,6 +39,7 @@ public actor List<ObserverType: Observer>: Controller where ObserverType.Observe
     }
     public func start() async throws {
         guard runState == .stopped else { return }
+        runState = .starting
         do {
             observerTasks.append(try await add(
                 notification: .selectedChildrenChanged,
@@ -47,6 +48,7 @@ public actor List<ObserverType: Observer>: Controller where ObserverType.Observe
         } catch let error as ControllerObserverError {
             logger.info("\(error.localizedDescription)")
         } catch {
+            runState = .stopped
             throw error
         }
         runState = .running
@@ -57,7 +59,9 @@ public actor List<ObserverType: Observer>: Controller where ObserverType.Observe
     }
     public func stop() async throws {
         guard runState == .running else { return }
-        observerTasks = []
+        runState = .stopping
+        observerTasks.forEach { $0.cancel() }
+        observerTasks.removeAll()
         runState = .stopped
     }
     public func output(event: ControllerOutputEvent) async throws -> [Output.Job.Payload] {

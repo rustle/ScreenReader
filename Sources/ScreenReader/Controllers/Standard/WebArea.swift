@@ -40,7 +40,7 @@ public actor WebArea<ObserverType: Observer>: Controller where ObserverType.Obse
     }
     public func start() async throws {
         guard runState == .stopped else { return }
-        runState = .running
+        runState = .starting
         do {
             observerTasks.append(try await add(
                 notification: .selectedTextChanged,
@@ -49,14 +49,17 @@ public actor WebArea<ObserverType: Observer>: Controller where ObserverType.Obse
         } catch let error as ControllerObserverError {
             logger.info("\(error.localizedDescription)")
         } catch {
+            runState = .stopped
             throw error
         }
+        runState = .running
     }
     public func stop() async throws {
         guard runState == .running else { return }
-        runState = .stopped
+        runState = .stopping
         observerTasks.forEach { $0.cancel() }
-        observerTasks = []
+        observerTasks.removeAll()
+        runState = .stopped
     }
     public func output(event: ControllerOutputEvent) async throws -> [Output.Job.Payload] {
         if let roleDescription = try? await element.roleDescription() {

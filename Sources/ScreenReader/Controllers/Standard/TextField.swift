@@ -5,6 +5,7 @@
 //
 
 import AccessibilityElement
+import AppKit
 import Foundation
 import RunLoopExecutor
 import TargetAction
@@ -40,24 +41,18 @@ public actor TextField<ObserverType: Observer>: Controller where ObserverType.Ob
     }
     public func start() async throws {
         guard runState == .stopped else { return }
+        runState = .starting
         do {
-            observerTasks.append(try await add(
+            try await add(
                 notification: .valueChanged,
                 handler: target(action: TextField<ObserverType>.valueChanged)
-            ))
-        } catch let error as ControllerObserverError {
-            logger.info("\(error.localizedDescription)")
-        } catch {
-            throw error
-        }
-        do {
-            observerTasks.append(try await add(
+            )
+            try await add(
                 notification: .selectedTextChanged,
                 handler: target(action: TextField<ObserverType>.selectedTextChanged)
-            ))
-        } catch let error as ControllerObserverError {
-            logger.info("\(error.localizedDescription)")
+            )
         } catch {
+            runState = .stopped
             throw error
         }
         runState = .running
@@ -89,8 +84,25 @@ public actor TextField<ObserverType: Observer>: Controller where ObserverType.Ob
     }
     public func stop() async throws {
         guard runState == .running else { return }
-        observerTasks = []
+        runState = .stopping
+        observerTasks.forEach { $0.cancel() }
+        observerTasks.removeAll()
         runState = .stopped
+    }
+    private func add(
+        notification: NSAccessibility.Notification,
+        handler: @escaping @Sendable (ObserverType.ObserverElement, [String:SystemElementValueContainer]?) async -> Void
+    ) async throws {
+        do {
+            observerTasks.append(try await add(
+                notification: notification,
+                handler: handler
+            ))
+        } catch let error as ControllerObserverError {
+            logger.info("\(error.localizedDescription)")
+        } catch {
+            throw error
+        }
     }
     private func valueChanged(
         element: ElementType,

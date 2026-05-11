@@ -43,7 +43,9 @@ public actor Group<ObserverType: Observer>: Controller where ObserverType.Observ
     }
     public func stop() async throws {
         guard runState == .running else { return }
-        observerTasks = []
+        runState = .stopping
+        observerTasks.forEach { $0.cancel() }
+        observerTasks.removeAll()
         runState = .stopped
     }
     public func output(event: ControllerOutputEvent) async throws -> [Output.Job.Payload] {

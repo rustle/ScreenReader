@@ -39,6 +39,7 @@ public actor Button<ObserverType: Observer>: Controller where ObserverType.Obser
     }
     public func start() async throws {
         guard runState == .stopped else { return }
+        runState = .starting
         do {
             observerTasks.append(try await add(
                 notification: .valueChanged,
@@ -47,6 +48,7 @@ public actor Button<ObserverType: Observer>: Controller where ObserverType.Obser
         } catch let error as ControllerObserverError {
             logger.info("\(error.localizedDescription)")
         } catch {
+            runState = .stopped
             throw error
         }
         runState = .running
@@ -75,7 +77,9 @@ public actor Button<ObserverType: Observer>: Controller where ObserverType.Obser
     }
     public func stop() async throws {
         guard runState == .running else { return }
-        observerTasks = []
+        runState = .stopping
+        observerTasks.forEach { $0.cancel() }
+        observerTasks.removeAll()
         runState = .stopped
     }
     private func valueChanged(

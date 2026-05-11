@@ -154,7 +154,7 @@ public actor Application<ObserverType: Observer>: Controller where ObserverType.
         try await observer.stop()
         self.observer = nil
         observerTasks.forEach { $0.cancel() }
-        observerTasks = []
+        observerTasks.removeAll()
         jobsTask?.cancel()
         jobsTask = nil
     }

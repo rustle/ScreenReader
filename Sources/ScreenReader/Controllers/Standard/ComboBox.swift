@@ -68,7 +68,9 @@ public actor ComboBox<ObserverType: Observer>: Controller where ObserverType.Obs
     }
     public func stop() async throws {
         guard runState == .running else { return }
-        observerTasks = []
+        runState = .stopping
+        observerTasks.forEach { $0.cancel() }
+        observerTasks.removeAll()
         runState = .stopped
     }
 }

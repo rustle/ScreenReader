@@ -76,7 +76,7 @@ public actor Unknown<ObserverType: Observer>: Controller where ObserverType.Obse
         guard runState == .running else { return }
         runState = .stopped
         observerTasks.forEach { $0.cancel() }
-        observerTasks = []
+        observerTasks.removeAll()
     }
 }
 

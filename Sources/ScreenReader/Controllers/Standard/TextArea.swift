@@ -5,6 +5,7 @@
 //
 
 import AccessibilityElement
+import AppKit
 import Foundation
 import RunLoopExecutor
 import TargetAction
@@ -66,24 +67,18 @@ public actor TextArea<ObserverType: Observer>: Controller where ObserverType.Obs
 
     public func start() async throws {
         guard runState == .stopped else { return }
+        runState = .starting
         do {
-            observerTasks.append(try await add(
+            try await add(
                 notification: .valueChanged,
                 handler: target(action: TextArea<ObserverType>.valueChanged)
-            ))
-        } catch let error as ControllerObserverError {
-            logger.info("\(error.localizedDescription)")
-        } catch {
-            throw error
-        }
-        do {
-            observerTasks.append(try await add(
+            )
+            try await add(
                 notification: .selectedTextChanged,
                 handler: target(action: TextArea<ObserverType>.selectedTextChanged)
-            ))
-        } catch let error as ControllerObserverError {
-            logger.info("\(error.localizedDescription)")
+            )
         } catch {
+            runState = .stopped
             throw error
         }
         runState = .running
@@ -114,12 +109,29 @@ public actor TextArea<ObserverType: Observer>: Controller where ObserverType.Obs
             payloads: payloads
         ))
     }
-
     public func stop() async throws {
         guard runState == .running else { return }
-        observerTasks = []
         runState = .stopped
+        observerTasks.forEach { $0.cancel() }
+        observerTasks.removeAll()
     }
+
+    private func add(
+        notification: NSAccessibility.Notification,
+        handler: @escaping @Sendable (ObserverType.ObserverElement, [String:SystemElementValueContainer]?) async -> Void
+    ) async throws {
+        do {
+            observerTasks.append(try await add(
+                notification: notification,
+                handler: handler
+            ))
+        } catch let error as ControllerObserverError {
+            logger.info("\(error.localizedDescription)")
+        } catch {
+            throw error
+        }
+    }
+
     private func refreshBuffer(caret: Int) async throws {
         guard caret >= 0, caret <= previousCharacterCount else {
             textBuffer = ""

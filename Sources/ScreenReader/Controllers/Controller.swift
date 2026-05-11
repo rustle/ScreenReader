@@ -82,10 +82,10 @@ enum ControllerObserverError: Error {
     }
 }
 
-// TODO: Add a `.starting` case so the guard can transition to `.starting` immediately
-// (blocking re-entry) while configuration awaits complete before transitioning to `.running`.
 enum RunState {
+    case starting
     case running
+    case stopping
     case stopped
 }
 
